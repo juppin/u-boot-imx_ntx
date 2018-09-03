@@ -151,26 +151,21 @@
 
 #else //][!
 
-#ifdef CONFIG_MFG //[
+#ifdef CONFIG_MFG
 
-#ifdef CONFIG_MT42L128M32D1 //[
-	#ifdef CONFIG_MFG_ADB //[
-		#define CONFIG_BOOTARGS         "console=ttymxc0,115200 hwcfg_p=0x9ffffe00 hwcfg_sz=110 waveform_p=0x9F800000 waveform_sz=6609376"
-	#else //][! CONFIG_MFG_ADB
-		#define CONFIG_BOOTARGS         "console=ttymxc0,115200 rdinit=/linuxrc nosmp hwcfg_p=0x9ffffe00 hwcfg_sz=110"
-	#endif //] CONFIG_MFG_ADB
-#else //][! CONFIG_MT42L128M32D1
-	#define CONFIG_BOOTARGS         "console=ttymxc0,115200 rdinit=/linuxrc nosmp hwcfg_p=0x9ffffe00 hwcfg_sz=110"
-#endif //] CONFIG_MT42L128M32D1
-
-#define CONFIG_BOOTCOMMAND      "bootm 0x80800000 0x81000000"
+#ifdef CONFIG_MT42L128M32D1
+#define CONFIG_BOOTARGS         "console=ttymxc0,115200 rdinit=/linuxrc nosmp hwcfg_p=0x9ffffe00 hwcfg_sz=110 mem=500M"
+#else
+#define CONFIG_BOOTARGS         "console=ttymxc0,115200 rdinit=/linuxrc nosmp hwcfg_p=0x8ffffe00 hwcfg_sz=110 mem=250M"
+#endif
+#define CONFIG_BOOTCOMMAND      "bootm 0x80800000 0x80c00000"
 #define CONFIG_EXTRA_ENV_SETTINGS                                       \
 		"netdev=eth0\0"                                         \
 		"ethprime=FEC0\0"                                       \
 		"uboot=u-boot.bin\0"                    \
 		"kernel=uImage\0"                               \
 
-#else //][!CONFIG_MFG
+#else
 #define	CONFIG_EXTRA_ENV_SETTINGS					\
 		"uboot=u-boot.bin\0"			\
 		"kernel=uImage\0"				\
@@ -185,7 +180,7 @@
 		"KRN_SDNUM_SD=1\0" \
 		"KRN_SDNUM_Recovery=0\0" \
 		"verify=no" 
-#endif//] CONFIG_MFG
+#endif
 
 
 #endif //]
@@ -329,7 +324,6 @@
 	#define CONFIG_ENV_IS_NOWHERE	1
 #endif
 
-
 /*
  * I2C Configs
  */
@@ -412,9 +406,5 @@
 #endif
 #endif
 #endif /* CONFIG_SPLASH_SCREEN */
-
-#ifndef __ASSEMBLY__//[
-extern char *gpszNTX_SN;
-#endif //]__ASSEMBLY__
 
 #endif				/* __CONFIG_H */

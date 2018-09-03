@@ -16,7 +16,6 @@
 #include "ntx_hwconfig.h"
 #include "ntx_hw.h"
 
-#define ASSERT(x)	if(!(x))printf("\n\n[WARNING]\nassertion (%s) failed !!!\n\n\n",#x)
 //#define DEBUG
 //#include <common.h>
 
@@ -28,13 +27,11 @@
 #define SD_OFFSET_SECS_KERNEL		2048
 #define SD_OFFSET_SECS_INITRD		12288
 #define SD_OFFSET_SECS_INITRD2		8192
-
 #ifdef _MX6Q_//[
 	#define SD_OFFSET_SECS_HWCFG		1524
 #else 
 	#define SD_OFFSET_SECS_HWCFG		1024
 #endif //]_MX6Q_
-
 #define SD_OFFSET_SECS_WAVEFORM		14336
 #define SD_OFFSET_SECS_LOGO			18432
 #define SD_OFFSET_SECS_LOGO2			34816
@@ -45,7 +42,6 @@
 	#define SD_OFFSET_SECS_BOOTWAVEFORM		55296
 #endif //] ADVANCE_WAVEFORM_FILE
 
-#define SD_OFFSET_SECS_NTXFW		1030
 
 #define SD_OFFSET_SECS_SNMAC		1
 //#define SD_OFFSET_SECS_SN		1
@@ -74,16 +70,11 @@ const char * gszPCBA[]={
 	"E606F0B","E60Q30","E60QB0","E60QC0","A13120",// 35~39
 	"E60Q50","E606G0","E60Q60","E60Q80","A13130",// 40~44
 	"E606H2","E60Q90","ED0Q00","E60QA0","E60QD0",// 45~49
-	"E60QF0","E60QH0","E60QG0","H70000","ED0Q10",// 50~54 
-	"E70Q00","H40000","NC","E60QJ0","E60QL0",// 55~59
-	"E60QM0","E60QK0","E70S00","T60Q00","C31Q00", // 60~64
-	"E60QN0","E60U00","E70Q10","E60QP0","E60QQ0", // 65~69
-	"E70Q20", // 70~74
+	"E60QF0","E60QH0",//50~59
 };
 #endif //]USE_HWCONFIG
 
 #define NTX_HWCFG_PRELOAD_ADDR	0x9FFFFE00
-#define NTX_SN_PRELOAD_ADDR			0x9FFFFC00
 
 const static unsigned char gszNtxBinMagicA[4]={0xff,0xf5,0xaf,0xff};
 
@@ -107,17 +98,14 @@ char gszMMC_Boot_Cmd[128]="";
 
 static unsigned char gbSectorBufA[512],*gpbSectorBuffer=gbSectorBufA;
 
-char gcNTX_SN[512],*gpszNTX_SN;
-
 
 #define NTX_BOOTMODE_NA		(-1)
 #define NTX_BOOTMODE_ISD		0 // normal boot mode .
 #define NTX_BOOTMODE_ESD_UPG	1 // external upgrade mode .
 #define NTX_BOOTMODE_RECOVERY	2 // internal recovery mode .
 #define NTX_BOOTMODE_FASTBOOT	3 // fastboot mode .
-#define NTX_BOOTMODE_SDOWNLOAD	4 // USB serial download mode .
 
-static volatile int giNtxBootMode = NTX_BOOTMODE_NA ;
+static int giNtxBootMode = NTX_BOOTMODE_NA ;
 
 
 //#define MMC_DEV_ISD		0
@@ -136,12 +124,11 @@ static int gi_mmc_esd_num=1;
 extern int ntxup_is_ext_card_inserted(void);
 extern int ntxup_wait_key_esdupg(void);
 extern unsigned long fastboot_connection_timeout_us_set(unsigned long dwTimeoutSetUS);
-extern int fastboot_connection_abortchk_setup(int (*fastboot_abort_check_fn)(void));
 
 // internal help functions ...
 static int _detect_bootmode_and_append_boot_args(char *O_cBufA,unsigned long I_ulBufSize);
 
-int ntx_is_fastboot_abort_inusbremove(void);
+
 
 #define GET_SD_NUM(_i)	({\
 	gi_mmc_##_i##sd_num; \
@@ -321,7 +308,6 @@ int ntx_gpio_set_value(NTX_GPIO *I_pt_gpio,int iOutVal)
 		printf("%s():[WARNING] \"%s\" set output value on input GPIO pin \n",
 				__FUNCTION__,I_pt_gpio->pszName);
 	}
-
 	reg = readl(dwGPIO_data_addr);
 	if(1==iOutVal) {
 		reg |= (u32)(1 << I_pt_gpio->GPIO_Num);
@@ -399,7 +385,6 @@ int ntx_gpio_get_value(NTX_GPIO *I_pt_gpio)
 			I_pt_gpio->GPIO_Grp);
 		return -2;
 	}
-
 	regDir = readl(dwGPIO_dir_addr);
 	if((regDir&(u32)(1 << I_pt_gpio->GPIO_Num))) {
 		// direction is input 
@@ -534,7 +519,6 @@ const static char gszKParamName_HwCfg[]="hwcfg";
 const static char gszKParamName_logo[]="logo";
 const static char gszKParamName_logo2[]="logo";
 const static char gszKParamName_waveform[]="waveform";
-const static char gszKParamName_ntxfw[]="ntxfw";
 
 volatile unsigned char *gpbRAM_TopAddr;
 volatile unsigned long gdwRAM_TotalSize,gdwRAM_ReservedSize;
@@ -570,10 +554,6 @@ static NtxHiddenMem gtNtxHiddenMem_logo = {
 static NtxHiddenMem gtNtxHiddenMem_logo2 = {
 	.pszName = gszKParamName_logo2 ,
 	.dwLoadSectNo = SD_OFFSET_SECS_LOGO2,
-};
-static NtxHiddenMem gtNtxHiddenMem_ntxfw = {
-	.pszName = gszKParamName_ntxfw ,
-	.dwLoadSectNo = SD_OFFSET_SECS_NTXFW,
 };
 
 void NtxHiddenMem_append_kcmdline(char *I_pcCmdlineBufA,unsigned long I_ulCmdlineBufSize,char *O_pcCmdlineBufA)
@@ -639,14 +619,6 @@ void NtxHiddenMem_append_kcmdline(char *I_pcCmdlineBufA,unsigned long I_ulCmdlin
 		printf("cmdline buffer not avalible !!\n");
 	}
 
-
-
-	if(14==gptNtxHwCfg->m_val.bDisplayCtrl) {	// 
-		// IT8951_USB .
-		sprintf(cAppendStr," video=vfb:enable");
-		strcat(O_pcCmdlineBufA,cAppendStr);
-	}
-
 	//printf("%s(%d)\n",__FUNCTION__,__LINE__);
 
 #if !defined(_MX6Q_) //[
@@ -663,14 +635,6 @@ void NtxHiddenMem_append_kcmdline(char *I_pcCmdlineBufA,unsigned long I_ulCmdlin
 #endif //](_MX6Q_)
 
 	//printf("%s(%d)\n",__FUNCTION__,__LINE__);
-	if(49==gptNtxHwCfg->m_val.bPCB || 69==gptNtxHwCfg->m_val.bPCB) {
-	// only register ram console for E60QDx, E60QQX
-		printf("Reserved 1M for ram console\n");
-		gdwRAM_ReservedSize += 0x100000;	//reserve 1M for ram_console
-		dwTemp = (unsigned long)(gdwRAM_TotalSize-gdwRAM_ReservedSize)+0x80000000;
-		sprintf(cAppendStr," ram_console_p=0x%x",(int)dwTemp);
-		strcat(O_pcCmdlineBufA,cAppendStr);
-	}
 	
 	if(0!=gdwRAM_ReservedSize) 
 	{
@@ -836,64 +800,6 @@ void _load_boot_waveform(void)
 #endif //] CONFIG_SPLASH_SCREEN
 }
 
-void _load_ntx_sn(void)
-{
-
-	_load_ntx_bin(GET_ISD_NUM(),SD_OFFSET_SECS_SNMAC,1,gcNTX_SN,512);
-
-#ifdef CONFIG_MFG //[
-	if( !( 'S'==gcNTX_SN[0] && 'N'==gcNTX_SN[1] && '-'==gcNTX_SN[2] ) )
-	{
-		// serail no from MFGTool .
-		int i=0;
-
-		gcNTX_SN[i++]='S';
-		gcNTX_SN[i++]='N';
-		gcNTX_SN[i++]='-';
-
-#if 0 //[
-		{
-			int j;
-			unsigned long long u64_cur_tick = get_ticks();
-			char cTemp;
-
-			printf("curtick=%016x\n",u64_cur_tick);
-			gcNTX_SN[i++]='M';
-			gcNTX_SN[i++]='F';
-			gcNTX_SN[i++]='G';
-			for(j=0;j<16;j++,i++) {
-				cTemp = (char)((u64_cur_tick>>(j*4))&0xf);
-				if( cTemp>=0x0 && cTemp<=9) {
-					gcNTX_SN[i]=cTemp+'0';
-				}
-				else {
-					gcNTX_SN[i]=cTemp+'a';
-				}
-			}
-		}
-#else //][
-		{
-			char *pc;
-			int j;
-
-			for(pc=NTX_SN_PRELOAD_ADDR,j=0;i<511;i++,j++)
-			{
-				if(pc[j]=='\0'||pc[j]=='\x0d'||pc[j]=='\x0a') {
-					break;
-				}
-				gcNTX_SN[i]=pc[j];
-			}
-		}
-#endif //]
-
-		gcNTX_SN[i]='\0';
-
-	}
-
-#endif //] CONFIG_MFG
-	gpszNTX_SN = &gcNTX_SN[3];
-	printf("NTXSN:\"%s\"\n",gpszNTX_SN);
-}
 
 void _load_isd_hwconfig(void)
 {
@@ -902,9 +808,6 @@ void _load_isd_hwconfig(void)
 #ifdef CONFIG_MFG
 	gptNtxHwCfg = NTX_HWCFG_PRELOAD_ADDR;
 	gdwNtxHwCfgSize = 110;
-#ifdef CONFIG_MFG_FASTBOOT //[
-	giNtxHwCfgSrc = NTX_HWCFG_SRC_RAM;
-#endif //]CONFIG_MFG_FASTBOOT
 	return;
 #endif
 	
@@ -953,6 +856,19 @@ void _load_esd_hwconfig(void)
 		memcpy((unsigned char *)&gtEsdNtxHwCfg,gbSectorBufA,sizeof(gtEsdNtxHwCfg));
 		gptEsdNtxHwCfg = &gtEsdNtxHwCfg;
 		gdwEsdNtxHwCfgSize = dwChk;
+		// if boot from esd we should pass the ESD software configs to kernel .
+		gptNtxHwCfg->m_val.bCustomer = gptEsdNtxHwCfg->m_val.bCustomer;
+		gptNtxHwCfg->m_val.bRootFsType = gptEsdNtxHwCfg->m_val.bRootFsType;
+		gptNtxHwCfg->m_val.bSysPartType = gptEsdNtxHwCfg->m_val.bSysPartType;
+		gptNtxHwCfg->m_val.bProgressCnts = gptEsdNtxHwCfg->m_val.bProgressCnts;
+		gptNtxHwCfg->m_val.bProgressXHiByte = gptEsdNtxHwCfg->m_val.bProgressXHiByte;
+		gptNtxHwCfg->m_val.bProgressXLoByte = gptEsdNtxHwCfg->m_val.bProgressXLoByte;
+		gptNtxHwCfg->m_val.bProgressYHiByte = gptEsdNtxHwCfg->m_val.bProgressYHiByte;
+		gptNtxHwCfg->m_val.bProgressYLoByte = gptEsdNtxHwCfg->m_val.bProgressYLoByte;
+		gptNtxHwCfg->m_val.bContentType = gptEsdNtxHwCfg->m_val.bContentType;
+		gptNtxHwCfg->m_val.bUIStyle = gptEsdNtxHwCfg->m_val.bUIStyle;
+		gptNtxHwCfg->m_val.bUIConfig = gptEsdNtxHwCfg->m_val.bUIConfig;
+
 	}
 	else {
 		printf("ESD hwconfig missing !\n");
@@ -991,37 +907,36 @@ static int _load_ntxkernel(unsigned char **O_ppbKernelAddr,unsigned long *O_pdwK
 		gi_mmc_num_kernel = GET_ISD_NUM() ;
 	}
 	
-	if(9==gptNtxHwCfg->m_val.bCustomer) {
-		dwImgSize = DEFAULT_LOAD_KERNEL_SZ*512;
-	}
-	else {
 #ifdef AUTO_DETECT_KIMGSIZE//[
-		_read_mmc(gi_mmc_num_kernel,gpbSectorBuffer,\
+
+	_read_mmc(gi_mmc_num_kernel,gpbSectorBuffer,\
 			(unsigned long)(SD_OFFSET_SECS_KERNEL-1),1);
 
-		if(gszNtxBinMagicA[0]==pbMagic[0]&&gszNtxBinMagicA[1]==pbMagic[1]\
-			&&gszNtxBinMagicA[2]==pbMagic[2]&&gszNtxBinMagicA[3]==pbMagic[3]) 
-		{
+	if(gszNtxBinMagicA[0]==pbMagic[0]&&gszNtxBinMagicA[1]==pbMagic[1]\
+		&&gszNtxBinMagicA[2]==pbMagic[2]&&gszNtxBinMagicA[3]==pbMagic[3]) 
+	{
 
-			dwImgSize = *((unsigned long *)(pbMagic+8));
-			printf("kernel size = %lu\n",dwImgSize);
-			//dwReadSectors = 0xfff;
+		dwImgSize = *((unsigned long *)(pbMagic+8));
+		printf("kernel size = %lu\n",dwImgSize);
+		dwReadSectors = dwImgSize>>9|1;
+		dwReadSectors += 6;
+		//dwReadSectors = 0xfff;
 		
-		}
-		else 
-#endif //] AUTO_DETECT_KIMGSIZE
-		{
-#ifdef AUTO_DETECT_KIMGSIZE//[
-			printf("no kernel image signature !\n");
-#endif //] AUTO_DETECT_KIMGSIZE
-			dwImgSize = DEFAULT_LOAD_KERNEL_SZ*512;
-		}
+		_read_mmc(gi_mmc_num_kernel,(unsigned char *)offset,\
+			(unsigned long)(SD_OFFSET_SECS_KERNEL),dwReadSectors);
 	}
+	else 
+#endif //] AUTO_DETECT_KIMGSIZE
+	{
+#ifdef AUTO_DETECT_KIMGSIZE//[
 
-	dwReadSectors = dwImgSize>>9|1;
-	dwReadSectors += 6;
-	_read_mmc(gi_mmc_num_kernel,(unsigned char *)offset,\
-		(unsigned long)(SD_OFFSET_SECS_KERNEL),dwReadSectors);
+		printf("no kernel image signature !\n");
+#endif //]AUTO_DETECT_KIMGSIZE
+		dwImgSize = DEFAULT_LOAD_KERNEL_SZ;
+		_read_mmc(gi_mmc_num_kernel,(unsigned char *)offset,\
+				SD_OFFSET_SECS_KERNEL,DEFAULT_LOAD_KERNEL_SZ);
+	
+	}
 
 	if(O_ppbKernelAddr) {
 		*O_ppbKernelAddr = (unsigned char *)offset;
@@ -1082,7 +997,7 @@ static int _load_ntxrd(unsigned char **O_ppbRDaddr,unsigned long *O_pdwRDsize)
 		gi_mmc_num_kernel = GET_ISD_NUM() ;
 	}
 
-#ifdef CONFIG_CMD_EXT4//[ load INITRD from EMMC "rootfs/boot/uinitramfs"
+#if 1//[ load INITRD from EMMC "rootfs/boot/uinitramfs"
 	if(0==L_pbRDAddr) {
 
 
@@ -1163,6 +1078,8 @@ static int _load_ntxrd(unsigned char **O_ppbRDaddr,unsigned long *O_pdwRDsize)
 
 			if ((part_length = ext4fs_set_blk_dev(ext4_dev_desc, part)) == 0) {
 				printf ("** Bad partition - mmc %d:%d **\n",  dev, part);
+				ext4fs_close();
+
 				iRet = -6;break;
 			}
 
@@ -1174,6 +1091,7 @@ static int _load_ntxrd(unsigned char **O_ppbRDaddr,unsigned long *O_pdwRDsize)
 			//printf("[DBG] ext4fs_mount(%d)\n",part_length);
 			if (!ext4fs_mount(part_length)) {
 				printf ("** Bad ext4 partition or disk - mmc %d:%d **\n",dev, part);
+				ext4fs_close();
 				deinit_fs(ext4_dev_desc);
 				iRet = -7;break;
 			}
@@ -1211,7 +1129,7 @@ static int _load_ntxrd(unsigned char **O_ppbRDaddr,unsigned long *O_pdwRDsize)
 
 		} while(0);
 	}
-#endif//]CONFIG_CMD_EXT4
+#endif//]
 
 #if 1//[ load INITRD from EMMC offset .
 
@@ -1312,23 +1230,6 @@ U_BOOT_CMD(load_ntxrd, 2, 0, do_load_ntxrd,
 
 
 
-static void _cp_swcfg_esd_to_isd(void)
-{
-	if(gptNtxHwCfg&&gptEsdNtxHwCfg) {
-		printf("copy soft configs from ESD to ISD ...\n");
-		// if boot from esd we should pass the ESD software configs to kernel .
-		gptNtxHwCfg->m_val.bRootFsType = gptEsdNtxHwCfg->m_val.bRootFsType;
-		gptNtxHwCfg->m_val.bSysPartType = gptEsdNtxHwCfg->m_val.bSysPartType;
-		gptNtxHwCfg->m_val.bProgressCnts = gptEsdNtxHwCfg->m_val.bProgressCnts;
-		gptNtxHwCfg->m_val.bProgressXHiByte = gptEsdNtxHwCfg->m_val.bProgressXHiByte;
-		gptNtxHwCfg->m_val.bProgressXLoByte = gptEsdNtxHwCfg->m_val.bProgressXLoByte;
-		gptNtxHwCfg->m_val.bProgressYHiByte = gptEsdNtxHwCfg->m_val.bProgressYHiByte;
-		gptNtxHwCfg->m_val.bProgressYLoByte = gptEsdNtxHwCfg->m_val.bProgressYLoByte;
-		gptNtxHwCfg->m_val.bContentType = gptEsdNtxHwCfg->m_val.bContentType;
-		gptNtxHwCfg->m_val.bUIStyle = gptEsdNtxHwCfg->m_val.bUIStyle;
-		gptNtxHwCfg->m_val.bUIConfig = gptEsdNtxHwCfg->m_val.bUIConfig;
-	}
-}
 
 /*********************************************************
  * purpose : 
@@ -1352,8 +1253,7 @@ static void _cp_swcfg_esd_to_isd(void)
 static int _detect_bootmode(void)
 {
 	int iRet=NTX_BOOTMODE_NA;
-	int iPwr_Key=-1,iUPG_Key=-1,iESD_in=-1,iUSB_in=-1,iBootESD=0;
-	int iMenuKey=-1;
+	int iPwr_Key=-1,iUPG_Key=-1,iESD_in=-1,iUSB_in=-1;
 
 
 
@@ -1380,7 +1280,6 @@ static int _detect_bootmode(void)
 			printf("\n**  1. Boot from ESD    **\n\n");
 			printf("\n**************************\n\n");		
 			iRet = NTX_BOOTMODE_ESD_UPG;
-			_cp_swcfg_esd_to_isd();
 		}
 		else {
 			iRet = NTX_BOOTMODE_ISD;
@@ -1417,24 +1316,14 @@ static int _detect_bootmode(void)
 		iUSB_in=ntx_detect_usb_plugin(0);
 		iESD_in=ntxup_is_ext_card_inserted();
 		iPwr_Key=_power_key_status();
-		iMenuKey = ntxup_wait_key_downloadmode();
-
-		if(iPwr_Key && iESD_in) {
-			_load_esd_hwconfig();
-		}
-
-		iBootESD=(gptEsdNtxHwCfg&&NTXHWCFG_TST_FLAG(gptEsdNtxHwCfg->m_val.bBootOpt,0))?1:0;
 
 #ifdef USB_OTG_FASTBOOT_MODE//[
-		//printf("## fastboot mode OTG USB test&debug ##\n");	iUSB_in|=USB_CHARGER_OTG;//test&debug only .
 		if(iUSB_in&USB_CHARGER_OTG) {
 			printf("\n**********************************\n\n");
 			printf("\n** fastboot mode OTG USB        **\n\n");
 			printf("\n**********************************\n\n");
 			iRet = NTX_BOOTMODE_FASTBOOT;
-			//fastboot_connection_timeout_us_set(5*1000*1000);
-			fastboot_connection_timeout_us_set(0);
-			fastboot_connection_abort_at_usb_remove_chk_setup(&ntx_is_fastboot_abort_inusbremove);
+			fastboot_connection_timeout_us_set(5*1000*1000);
 		}
 		else
 #endif //]USB_OTG_FASTBOOT_MODE
@@ -1455,21 +1344,21 @@ static int _detect_bootmode(void)
 					printf("\n**********************************\n\n");		
 					iRet = NTX_BOOTMODE_FASTBOOT;
 					fastboot_connection_timeout_us_set(5*1000*1000);
-					fastboot_connection_abort_at_usb_remove_chk_setup(&ntx_is_fastboot_abort_inusbremove);
 				}
 				else {
 					if( iPwr_Key ) {
 						iUPG_Key=ntxup_wait_touch_recovery();
 
 						if(iESD_in) {
+							_load_esd_hwconfig();
 
-							if ( iBootESD || (2==iUPG_Key) ) 
+							if ( (gptEsdNtxHwCfg && NTXHWCFG_TST_FLAG(gptEsdNtxHwCfg->m_val.bBootOpt,0)) || 
+									(2==iUPG_Key) ) 
 							{
 								printf("\n**********************************\n\n");
 								printf("\n* Boot from ESD (NO Key Model)  **\n\n");
 								printf("\n**********************************\n\n");		
 								iRet = NTX_BOOTMODE_ESD_UPG;
-								_cp_swcfg_esd_to_isd();
 							}
 							else {
 								iChkRecovery = 1;
@@ -1497,13 +1386,6 @@ static int _detect_bootmode(void)
 			}
 			else  {
 				iUPG_Key=ntxup_wait_key_esdupg();
-				if( 1==iMenuKey && iUSB_in && iPwr_Key) {
-					printf("\n**********************************\n\n");
-					printf("\n** USB SDownload mode           **\n\n");
-					printf("\n**********************************\n\n");
-					iRet = NTX_BOOTMODE_SDOWNLOAD;
-				}
-				else
 				if( 1==iUPG_Key && iUSB_in) {
 					printf("\n**********************************\n\n");
 					printf("\n** fastboot mode                **\n\n");
@@ -1521,13 +1403,13 @@ static int _detect_bootmode(void)
 					fastboot_connection_timeout_us_set(5*1000*1000);
 				}
 				else 
-				if(iESD_in && iPwr_Key &&	(iBootESD || (1==iUPG_Key)) ) 
+				if(iESD_in && 1==iUPG_Key && iPwr_Key ) 
 				{
 					printf("\n**************************\n\n");
 					printf("\n** Boot from ESD        **\n\n");
 					printf("\n**************************\n\n");		
 					iRet = NTX_BOOTMODE_ESD_UPG;
-					_cp_swcfg_esd_to_isd();
+					_load_esd_hwconfig();
 				}
 				else 
 				if(1==iUPG_Key) {
@@ -1549,8 +1431,8 @@ static int _detect_bootmode(void)
 		}
 
 #if 1//[ debug code .
-		printf("ESDin=%d,UPGKey=%d,PWRKey=%d,USBin=0x%x,BootESD=%d,MenuKey=%d\n",
-				iESD_in,iUPG_Key,iPwr_Key,iUSB_in,iBootESD,iMenuKey);
+		printf("ESDin=%d,UPGKey=%d,PWRKey=%d,USBin=0x%x\n",
+				iESD_in,iUPG_Key,iPwr_Key,iUSB_in);
 #endif //]
 
 		break;
@@ -1562,131 +1444,8 @@ static int _detect_bootmode(void)
 		frontLightCtrl();	
 	}
 #endif //]_MX6SL_
-
 	return iRet;
 }
-
-int giNTX_VFAT_partNO;
-int giNTX_RootFS_partNO;
-int giNTX_RecoveryFS_partNO;
-int giNTX_BootImg_partNO;
-int giNTX_RecoveryImg_partNO;
-int giNTX_System_partNO;
-int giNTX_Data_partNO;
-int giNTX_Cache_partNO;
-int giNTX_Vendor_partNO;
-int giNTX_Misc_partNO;
-int giNTX_Emergency_partNO;
-
-
-int ntx_parse_syspart_type(void)
-{
-	int iRet = 0;
-
-	switch(gptNtxHwCfg->m_val.bSysPartType) {
-	case 0://TYPE1
-		giNTX_RootFS_partNO=1;
-		giNTX_VFAT_partNO=2;
-		break;
-
-	case 1://TYPE2
-		giNTX_RootFS_partNO=2;
-		giNTX_RecoveryFS_partNO=1;
-		giNTX_VFAT_partNO=3;
-		break;
-
-	case 2://TYPE3
-		giNTX_RootFS_partNO=1;
-		giNTX_RecoveryFS_partNO=2;
-		giNTX_VFAT_partNO=3;
-		break;
-
-	case 3://TYPE4
-		giNTX_RootFS_partNO=2;
-		giNTX_VFAT_partNO=1;
-		break;
-
-	case 4://TYPE5
-		giNTX_RootFS_partNO=1;
-		break;
-
-	case 5://TYPE6
-		giNTX_RootFS_partNO=1;
-		giNTX_RecoveryFS_partNO=3;
-		giNTX_VFAT_partNO=2;
-		break;
-
-	case 6://TYPE7
-		giNTX_RootFS_partNO=2;
-		giNTX_RecoveryFS_partNO=3;
-		giNTX_VFAT_partNO=1;
-		break;
-
-	case 7://TYPE8
-		giNTX_System_partNO=2;
-		giNTX_VFAT_partNO=1;
-		giNTX_RecoveryFS_partNO=4;
-		giNTX_Data_partNO=5;
-		giNTX_Cache_partNO=6;
-		break;
-
-	case 8://TYPE9
-		giNTX_BootImg_partNO=1;
-		giNTX_RecoveryImg_partNO=2;
-		giNTX_System_partNO=5;
-		giNTX_VFAT_partNO=4;
-		giNTX_Data_partNO=7;
-		giNTX_Cache_partNO=6;
-		giNTX_Vendor_partNO=8;
-		giNTX_Misc_partNO=9;
-		break;
-
-	case 9://TYPE10
-		giNTX_System_partNO=2;
-		giNTX_VFAT_partNO=1;
-		giNTX_RecoveryFS_partNO=4;
-		giNTX_Data_partNO=5;
-		giNTX_Cache_partNO=6;
-		giNTX_Emergency_partNO=7;
-		break;
-
-	case 10://TYPE11
-		giNTX_BootImg_partNO=1;
-		giNTX_RecoveryImg_partNO=2;
-		giNTX_System_partNO=5;
-		giNTX_Data_partNO=4;
-		giNTX_Cache_partNO=6;
-		giNTX_Vendor_partNO=7;
-		giNTX_Misc_partNO=8;
-		break;
-
-	case 11://TYPE12
-		giNTX_BootImg_partNO=1;
-		giNTX_RecoveryImg_partNO=2;
-		giNTX_System_partNO=5;
-		giNTX_VFAT_partNO=4;
-		giNTX_Data_partNO=7;
-		giNTX_Cache_partNO=6;
-		giNTX_Vendor_partNO=8;
-		giNTX_Misc_partNO=9;
-		giNTX_Emergency_partNO=10;
-		break;
-
-	case 12://TYPE13
-		giNTX_RootFS_partNO=3;
-		giNTX_RecoveryFS_partNO=2;
-		giNTX_VFAT_partNO=1;
-		break;
-
-	default:
-		iRet = -1;
-		printf("%s():invalid partition type %d\n",__FUNCTION__,
-				(int)gptNtxHwCfg->m_val.bSysPartType);
-		break;
-	}
-	return iRet;
-}
-
 #ifdef CONFIG_FASTBOOT //[
 
 #define SECTOR_SIZE				512
@@ -1708,9 +1467,6 @@ int ntx_parse_syspart_type(void)
 #else //][
 	#error "unkown platform !!!"
 #endif //]_MX6SL_
-
-#define NTXFW_OFFSET	1030
-#define NTXFW_SIZE		256
 
 #define HWCFG_SIZE		2
 #define WAVEFORM_OFFSET			14336//7MB
@@ -1755,13 +1511,6 @@ static struct fastboot_ptentry ntx_fb_binsA[NTX_FASTBOOT_MAX_BPTN]= {
 		.partition_id=0,
 	},
 	{
-		.name="ntxfw",
-		.start=NTXFW_OFFSET,
-		.length=NTXFW_SIZE,
-		.flags=0,
-		.partition_id=0,
-	},
-	{
 		.name="waveform",
 		.start=WAVEFORM_OFFSET,
 		.length=WAVEFORM_SIZE,
@@ -1793,6 +1542,98 @@ static struct fastboot_ptentry ntx_fb_binsA[NTX_FASTBOOT_MAX_BPTN]= {
 
 // fastboot partitions ...
 static struct fastboot_ptentry ntx_fb_partsA[NTX_FASTBOOT_MAX_PPTN]= {
+#if 0//[
+#ifdef CONFIG_ANDROID_BOOT_PARTITION_MMC//[
+	{
+		.name="boot",
+		.start=0,
+		.length=0,
+		.flags=0,
+		.partition_id=CONFIG_ANDROID_BOOT_PARTITION_MMC,
+	},
+#endif //]CONFIG_ANDROID_BOOT_PARTITION_MMC
+#ifdef CONFIG_ANDROID_RECOVERY_PARTITION_MMC//[
+	{
+		.name="recovery",
+		.start=0,
+		.length=0,
+		.flags=0,
+		.partition_id=CONFIG_ANDROID_RECOVERY_PARTITION_MMC,
+	},
+#endif //]CONFIG_ANDROID_RECOVERY_PARTITION_MMC
+#ifdef CONFIG_ANDROID_DATA_PARTITION_MMC//[
+	{
+		.name="data",
+		.start=0,
+		.length=0,
+		.flags=0,
+		.partition_id=CONFIG_ANDROID_DATA_PARTITION_MMC,
+	},
+#endif //]CONFIG_ANDROID_DATA_PARTITION_MMC
+#ifdef CONFIG_ANDROID_SYSTEM_PARTITION_MMC//[
+	{
+		.name="system",
+		.start=0,
+		.length=0,
+		.flags=0,
+		.partition_id=CONFIG_ANDROID_SYSTEM_PARTITION_MMC,
+	},
+#endif //]CONFIG_ANDROID_SYSTEM_PARTITION_MMC
+#ifdef CONFIG_ANDROID_CACHE_PARTITION_MMC//[
+	{
+		.name="cache",
+		.start=0,
+		.length=0,
+		.flags=0,
+		.partition_id=CONFIG_ANDROID_CACHE_PARTITION_MMC,
+	},
+#endif //]CONFIG_ANDROID_CACHE_PARTITION_MMC
+#ifdef CONFIG_ANDROID_VENDOR_PARTITION_MMC//[
+	{
+		.name="vendor",
+		.start=0,
+		.length=0,
+		.flags=0,
+		.partition_id=CONFIG_ANDROID_VENDOR_PARTITION_MMC,
+	},
+#endif //]CONFIG_ANDROID_VENDOR_PARTITION_MMC
+#ifdef CONFIG_ANDROID_DEVICE_PARTITION_MMC//[
+	{
+		.name="device",
+		.start=0,
+		.length=0,
+		.flags=0,
+		.partition_id=CONFIG_ANDROID_DEVICE_PARTITION_MMC,
+	},
+#endif //]CONFIG_ANDROID_DEVICE_PARTITION_MMC
+#ifdef CONFIG_ANDROID_MISC_PARTITION_MMC//[
+	{
+		.name="misc",
+		.start=0,
+		.length=0,
+		.flags=0,
+		.partition_id=CONFIG_ANDROID_MISC_PARTITION_MMC,
+	},
+#endif //]CONFIG_ANDROID_MISC_PARTITION_MMC
+#ifdef CONFIG_ANDROID_EMERGENCY_PARTITION_MMC//[
+	{
+		.name="emergency",
+		.start=0,
+		.length=0,
+		.flags=0,
+		.partition_id=CONFIG_ANDROID_EMERGENCY_PARTITION_MMC,
+	},
+#endif //]CONFIG_ANDROID_EMERGENCY_PARTITION_MMC
+#ifdef CONFIG_ANDROID_MEDIA_PARTITION_MMC//[
+	{
+		.name="media",
+		.start=0,
+		.length=0,
+		.flags=0,
+		.partition_id=CONFIG_ANDROID_MEDIA_PARTITION_MMC,
+	},
+#endif //]CONFIG_ANDROID_MEDIA_PARTITION_MMC
+#endif//]
 };
 
 
@@ -1833,8 +1674,6 @@ void ntx_config_fastboot_layout(void)
 	struct mmc *mmc;
 	block_dev_desc_t *dev_desc = NULL;
 	unsigned sector, partno = -1;
-
-	int iPIdx;
 
 	hotfix_avoid_mmc_partition_cannot_be_recognized();
 
@@ -1878,85 +1717,207 @@ void ntx_config_fastboot_layout(void)
 
 	}
 
+	switch(gptNtxHwCfg->m_val.bSysPartType) {
+	case 0://TYPE1
+		strcpy(ntx_fb_partsA[0].name,gszLinuxRootFS_Name);
+		ntx_fb_partsA[0].partition_id=1;
 
-	iPIdx=0;
+		strcpy(ntx_fb_partsA[1].name,gszLinuxVfatFS_Name);
+		ntx_fb_partsA[1].partition_id=2;
+		break;
 
-	if(giNTX_RootFS_partNO>0) {
-		strcpy(ntx_fb_partsA[iPIdx].name,gszLinuxRootFS_Name);
-		ntx_fb_partsA[iPIdx].partition_id=giNTX_RootFS_partNO;
-		iPIdx++;
-	}
+	case 1://TYPE2
+		strcpy(ntx_fb_partsA[0].name,gszLinuxRecoveryFS_Name);
+		ntx_fb_partsA[0].partition_id=1;
 
-	if(giNTX_VFAT_partNO>0) {
-		if(2==gptNtxHwCfg->m_val.bUIStyle) {
-			strcpy(ntx_fb_partsA[iPIdx].name,gszDroidMedia_Name);
-		}
-		else {
-			strcpy(ntx_fb_partsA[iPIdx].name,gszLinuxVfatFS_Name);
-		}
-		ntx_fb_partsA[iPIdx].partition_id=giNTX_VFAT_partNO;
-		iPIdx++;
-	}
-	
-	if(giNTX_RecoveryFS_partNO>0) {
-		if(2==gptNtxHwCfg->m_val.bUIStyle) {
-			strcpy(ntx_fb_partsA[iPIdx].name,gszDroidRecovery_Name);
-		}
-		else {
-			strcpy(ntx_fb_partsA[iPIdx].name,gszLinuxRecoveryFS_Name);
-		}
-		ntx_fb_partsA[iPIdx].partition_id=giNTX_RecoveryFS_partNO;
-		iPIdx++;
-	}
+		strcpy(ntx_fb_partsA[1].name,gszLinuxRootFS_Name);
+		ntx_fb_partsA[1].partition_id=2;
 
-	if(giNTX_System_partNO>0) {
-		strcpy(ntx_fb_partsA[iPIdx].name,gszDroidSystem_Name);
-		ntx_fb_partsA[iPIdx].partition_id=giNTX_System_partNO;
-		iPIdx++;
-	}
+		strcpy(ntx_fb_partsA[2].name,gszLinuxVfatFS_Name);
+		ntx_fb_partsA[2].partition_id=3;
+		break;
 
-	if(giNTX_Data_partNO>0) {
-		strcpy(ntx_fb_partsA[iPIdx].name,gszDroidData_Name);
-		ntx_fb_partsA[iPIdx].partition_id=giNTX_Data_partNO;
-		iPIdx++;
-	}
+	case 2://TYPE3
+		strcpy(ntx_fb_partsA[0].name,gszLinuxRootFS_Name);
+		ntx_fb_partsA[0].partition_id=1;
 
-	if(giNTX_Cache_partNO>0) {
-		strcpy(ntx_fb_partsA[iPIdx].name,gszDroidCache_Name);
-		ntx_fb_partsA[iPIdx].partition_id=giNTX_Cache_partNO;
-		iPIdx++;
-	}
-	
-	if(giNTX_BootImg_partNO>0) {
-		strcpy(ntx_fb_partsA[iPIdx].name,gszDroidBoot_Name);
-		ntx_fb_partsA[iPIdx].partition_id=giNTX_BootImg_partNO;
-		iPIdx++;
-	}
+		strcpy(ntx_fb_partsA[1].name,gszLinuxRecoveryFS_Name);
+		ntx_fb_partsA[1].partition_id=2;
 
-	if(giNTX_RecoveryImg_partNO>0) {
-		strcpy(ntx_fb_partsA[iPIdx].name,gszDroidRecovery_Name);
-		ntx_fb_partsA[iPIdx].partition_id=giNTX_RecoveryImg_partNO;
-		iPIdx++;
-	}
+		strcpy(ntx_fb_partsA[2].name,gszLinuxVfatFS_Name);
+		ntx_fb_partsA[2].partition_id=3;
+		break;
 
-	if(giNTX_Vendor_partNO>0) {
-		strcpy(ntx_fb_partsA[iPIdx].name,gszDroidVendor_Name);
-		ntx_fb_partsA[iPIdx].partition_id=giNTX_Vendor_partNO;
-		iPIdx++;
-	}
+	case 3://TYPE4
+		strcpy(ntx_fb_partsA[0].name,gszLinuxVfatFS_Name);
+		ntx_fb_partsA[0].partition_id=1;
 
-	if(giNTX_Misc_partNO>0) {
-		strcpy(ntx_fb_partsA[iPIdx].name,gszDroidMisc_Name);
-		ntx_fb_partsA[iPIdx].partition_id=giNTX_Misc_partNO;
-		iPIdx++;
-	}
+		strcpy(ntx_fb_partsA[1].name,gszLinuxRootFS_Name);
+		ntx_fb_partsA[1].partition_id=2;
+		break;
 
-	if(giNTX_Emergency_partNO>0) {
-		strcpy(ntx_fb_partsA[iPIdx].name,gszDroidEmergency_Name);
-		ntx_fb_partsA[iPIdx].partition_id=giNTX_Emergency_partNO;
-		iPIdx++;
-	}
+	case 4://TYPE5
+		strcpy(ntx_fb_partsA[0].name,gszLinuxRootFS_Name);
+		ntx_fb_partsA[0].partition_id=1;
+		break;
 
+	case 5://TYPE6
+		strcpy(ntx_fb_partsA[0].name,gszLinuxRootFS_Name);
+		ntx_fb_partsA[0].partition_id=1;
+
+		strcpy(ntx_fb_partsA[1].name,gszLinuxVfatFS_Name);
+		ntx_fb_partsA[1].partition_id=2;
+
+		strcpy(ntx_fb_partsA[2].name,gszLinuxRecoveryFS_Name);
+		ntx_fb_partsA[2].partition_id=3;
+		break;
+
+	case 6://TYPE7
+		strcpy(ntx_fb_partsA[0].name,gszLinuxVfatFS_Name);
+		ntx_fb_partsA[0].partition_id=1;
+
+		strcpy(ntx_fb_partsA[1].name,gszLinuxRootFS_Name);
+		ntx_fb_partsA[1].partition_id=2;
+
+		strcpy(ntx_fb_partsA[2].name,gszLinuxRecoveryFS_Name);
+		ntx_fb_partsA[2].partition_id=3;
+		break;
+
+	case 7://TYPE8
+		strcpy(ntx_fb_partsA[0].name,gszDroidMedia_Name);
+		ntx_fb_partsA[0].partition_id=1;
+
+		strcpy(ntx_fb_partsA[1].name,gszDroidSystem_Name);
+		ntx_fb_partsA[1].partition_id=2;
+
+		strcpy(ntx_fb_partsA[2].name,gszDroidRecovery_Name);
+		ntx_fb_partsA[2].partition_id=4;
+
+		strcpy(ntx_fb_partsA[3].name,gszDroidData_Name);
+		ntx_fb_partsA[3].partition_id=5;
+
+		strcpy(ntx_fb_partsA[4].name,gszDroidCache_Name);
+		ntx_fb_partsA[4].partition_id=6;
+		break;
+
+	case 8://TYPE9
+		strcpy(ntx_fb_partsA[0].name,gszDroidBoot_Name);
+		ntx_fb_partsA[0].partition_id=1;
+
+		strcpy(ntx_fb_partsA[1].name,gszDroidRecovery_Name);
+		ntx_fb_partsA[1].partition_id=2;
+
+		strcpy(ntx_fb_partsA[2].name,gszDroidMedia_Name);
+		ntx_fb_partsA[2].partition_id=4;
+
+		strcpy(ntx_fb_partsA[3].name,gszDroidSystem_Name);
+		ntx_fb_partsA[3].partition_id=5;
+
+		strcpy(ntx_fb_partsA[4].name,gszDroidCache_Name);
+		ntx_fb_partsA[4].partition_id=6;
+
+		strcpy(ntx_fb_partsA[5].name,gszDroidData_Name);
+		ntx_fb_partsA[5].partition_id=7;
+
+		strcpy(ntx_fb_partsA[6].name,gszDroidVendor_Name);
+		ntx_fb_partsA[6].partition_id=8;
+
+		strcpy(ntx_fb_partsA[7].name,gszDroidMisc_Name);
+		ntx_fb_partsA[7].partition_id=9;
+
+		break;
+
+	case 9://TYPE10
+		strcpy(ntx_fb_partsA[0].name,gszDroidMedia_Name);
+		ntx_fb_partsA[0].partition_id=1;
+
+		strcpy(ntx_fb_partsA[1].name,gszDroidSystem_Name);
+		ntx_fb_partsA[1].partition_id=2;
+
+		strcpy(ntx_fb_partsA[2].name,gszDroidRecovery_Name);
+		ntx_fb_partsA[2].partition_id=4;
+
+		strcpy(ntx_fb_partsA[3].name,gszDroidData_Name);
+		ntx_fb_partsA[3].partition_id=5;
+
+		strcpy(ntx_fb_partsA[4].name,gszDroidCache_Name);
+		ntx_fb_partsA[4].partition_id=6;
+
+		strcpy(ntx_fb_partsA[5].name,gszDroidEmergency_Name);
+		ntx_fb_partsA[5].partition_id=7;
+
+		break;
+
+	case 10://TYPE11
+		strcpy(ntx_fb_partsA[0].name,gszDroidBoot_Name);
+		ntx_fb_partsA[0].partition_id=1;
+
+		strcpy(ntx_fb_partsA[1].name,gszDroidRecovery_Name);
+		ntx_fb_partsA[1].partition_id=2;
+
+		strcpy(ntx_fb_partsA[2].name,gszDroidData_Name);
+		ntx_fb_partsA[2].partition_id=4;
+
+		strcpy(ntx_fb_partsA[3].name,gszDroidSystem_Name);
+		ntx_fb_partsA[3].partition_id=5;
+
+		strcpy(ntx_fb_partsA[4].name,gszDroidCache_Name);
+		ntx_fb_partsA[4].partition_id=6;
+
+		strcpy(ntx_fb_partsA[5].name,gszDroidVendor_Name);
+		ntx_fb_partsA[5].partition_id=7;
+
+		strcpy(ntx_fb_partsA[6].name,gszDroidMisc_Name);
+		ntx_fb_partsA[6].partition_id=8;
+
+		break;
+
+	case 11://TYPE12
+		strcpy(ntx_fb_partsA[0].name,gszDroidBoot_Name);
+		ntx_fb_partsA[0].partition_id=1;
+
+		strcpy(ntx_fb_partsA[1].name,gszDroidRecovery_Name);
+		ntx_fb_partsA[1].partition_id=2;
+
+		strcpy(ntx_fb_partsA[2].name,gszDroidMedia_Name);
+		ntx_fb_partsA[2].partition_id=4;
+
+		strcpy(ntx_fb_partsA[3].name,gszDroidSystem_Name);
+		ntx_fb_partsA[3].partition_id=5;
+
+		strcpy(ntx_fb_partsA[4].name,gszDroidCache_Name);
+		ntx_fb_partsA[4].partition_id=6;
+
+		strcpy(ntx_fb_partsA[5].name,gszDroidData_Name);
+		ntx_fb_partsA[5].partition_id=7;
+
+		strcpy(ntx_fb_partsA[6].name,gszDroidVendor_Name);
+		ntx_fb_partsA[6].partition_id=8;
+
+		strcpy(ntx_fb_partsA[7].name,gszDroidMisc_Name);
+		ntx_fb_partsA[7].partition_id=9;
+
+		strcpy(ntx_fb_partsA[8].name,gszDroidEmergency_Name);
+		ntx_fb_partsA[8].partition_id=10;
+
+		break;
+
+	case 12://TYPE13
+		strcpy(ntx_fb_partsA[0].name,gszLinuxVfatFS_Name);
+		ntx_fb_partsA[0].partition_id=1;
+
+		strcpy(ntx_fb_partsA[1].name,gszLinuxRecoveryFS_Name);
+		ntx_fb_partsA[1].partition_id=2;
+
+		strcpy(ntx_fb_partsA[2].name,gszLinuxRootFS_Name);
+		ntx_fb_partsA[2].partition_id=3;
+		break;
+
+	default:
+		printf("%s():invalid partition type %d\n",__FUNCTION__,
+				(int)gptNtxHwCfg->m_val.bSysPartType);
+		break;
+	}
 
 	for (i=0;i<sizeof(ntx_fb_binsA)/sizeof(ntx_fb_binsA[0]);i++)
 	{
@@ -2000,28 +1961,9 @@ void ntx_config_fastboot_layout(void)
 
 }
 
-int ntx_is_fastboot_abort_inusbremove(void) 
-{
-#if 0
-	if(49==gptNtxHwCfg->m_val.bPCB && gptNtxHwCfg->m_val.bPCB_REV>=0x20)
-	{
-		return 1;
-	}
-	else if(2!=gptNtxHwCfg->m_val.bUIStyle && 12==gptNtxHwCfg->m_val.bKeyPad)
-	{
-		// linux platform & models without keys .
-		if(_power_key_status()) {
-			return 1;
-		}
-	}
-#endif
-	return 1;
-}
-
 #else //][!CONFIG_FASTBOOT
 
 void ntx_config_fastboot_layout(void){}
-int ntx_is_fastboot_abort_inusbremove(void) {return 0;}
 
 #endif //]CONFIG_FASTBOOT
 
@@ -2078,51 +2020,29 @@ int ricoh_read_adc (unsigned char adsel)
 	return i;
 }
 
-#define THEM_BAT_HEAT	(606*4095/2500)		// 50 degrees
-#define THEM_BAT_COLD	(1824*4095/2500)	// 0 degrees
-
+#define THEM_BAT_HEAT	0x3BE	// 2.5V*30.546K / 30.546K+100K (Thermistor 60 degree is 30.546KOhm)
+#define THEM_BAT_COLD	0xBAC	// 2.5V*269.96K / 269.96K+100K (Thermistor 0 degree is 269.96KOhm)
 // ADC*2*2.5/4095=V
 #define BATTERY_THRESHOLD 		2948	// 3.6V
-//#define BATTERY_USB_THRESHOLD 	3112	//3.8V
-#define BATTERY_USB_THRESHOLD 	3071	//3.75V
-//#define BATTERY_USB_THRESHOLD 	2989	// 3.65V
-void _power_off (void)
-{
-	if (1 == gptNtxHwCfg->m_val.bPMIC) {
-		unsigned char bVal;
-
-		/* Disable all interrupt */
-		RC5T619_write_reg(0x9D, 0);		// RICOH61x_INTC_INTEN
-		/* Disable RTC alarm */
-		RC5T619_read_reg(0xAE, &bVal);	// read rtc_ctrl1
-		bVal &= 0xBF;	// clear DALE
-		RC5T619_write_reg(0xAE, bVal);		// rtc_ctrl1
-		/* Not repeat power ON after power off(Power Off/N_OE) */
-		RC5T619_write_reg(0x0F, 0);		// RICOH61x_PWR_REP_CNT
-		/* Power OFF */
-		RC5T619_write_reg(0x0E, 1);		// RICOH61x_PWR_SLP_CNT
-	}
-}
+#define BATTERY_USB_THRESHOLD 	2989	// 3.65V
 
 void isBatCritical (void)
 {
 	unsigned char bBufA[2];
 
-	if (49!=gptNtxHwCfg->m_val.bPCB)	// only block in boot with BN models.
+	if (40==gptNtxHwCfg->m_val.bPCB || 50==gptNtxHwCfg->m_val.bPCB)	// Do not block in boot with DT models.
 		return;
-
 	if (1 == gptNtxHwCfg->m_val.bPMIC) {
 		int i = ricoh_read_adc (5);	// read battery temperature
-
-		i2c_read(0x32, 0x09, 1, bBufA, 1);	// read power on history
-		if (bBufA[0] & 0xFA)
-			printf ("RC5T619 power on history 0x%02X.\n", bBufA[0]);
-
 		printf ("RC5T619 read battery temperature %dmV (0x%03X).\n", i*2500/4095, i);
 
 		if ((THEM_BAT_HEAT > i) || (THEM_BAT_COLD < i)) {
 			printf ("RC5T619 battery temperature too high / low. Force power off.\n");
-			_power_off ();
+
+			/* Not repeat power ON after power off(Power Off/N_OE) */
+			RC5T619_write_reg(0x0F, 0);		// RICOH61x_PWR_REP_CNT
+			/* Power OFF */
+			RC5T619_write_reg(0x0E, 1);		// RICOH61x_PWR_SLP_CNT
 		}
 
 		if (0==ntx_gpio_get_value(&gt_ntx_gpio_bat_low)) {
@@ -2133,9 +2053,6 @@ void isBatCritical (void)
 				unsigned char  interval = 2; //sec
 				unsigned short timeout = 480; //sec
 				printf("Battery critical !! USB_IN, charge a while\n");
-				if (49==gptNtxHwCfg->m_val.bPCB || 69==gptNtxHwCfg->m_val.bPCB)
-					//E60QDx, E60QQx
-					timeout = 1200;		// set 20 minutes
 				// set VWEAK to 3.3V
 				i2c_read(0x32, 0xBA, 1, bBufA, 1);
 				bBufA[0] &= 0xF3;
@@ -2148,27 +2065,25 @@ void isBatCritical (void)
 						break;
 					}
 					i = ricoh_read_adc (1);
-					if (1==ntx_gpio_get_value(&gt_ntx_gpio_bat_low) || (BATTERY_USB_THRESHOLD < i)) {
+					if (1==ntx_gpio_get_value(&gt_ntx_gpio_bat_low) && (BATTERY_USB_THRESHOLD < i)) {
 						printf("\nBattery critical !! charge completed, take (%d) secs\n", waitTime*interval, i);
-						printf ("RC5T619 battery %dmv. (0x%X , battery low %d)\n", i*5000/4095, i, ntx_gpio_get_value(&gt_ntx_gpio_bat_low));
+						printf ("RC5T619 battery %dmv. (0x%X)\n", i*5000/4095, i);
 						return;
 					}
 					if (!ntx_detect_usb_plugin(0)) {
 						printf("\nBattery critical !! USB_OUT\n");
 						break;
 					}
-					if (!(waitTime%10))
-						printf ("RC5T619 battery too low %dmv. (0x%X , battery low %d)\n", i*5000/4095, i, ntx_gpio_get_value(&gt_ntx_gpio_bat_low));
 					printf(".");
 					waitTime++;
 					udelay(interval*1000000);
 				}
 			}
-			else
-				i = ricoh_read_adc (1);
 			printf ("RC5T619 battery too low %dmv. (0x%X) Force power off.\n", i*5000/4095, i);
-
-			_power_off ();
+			/* Not repeat power ON after power off(Power Off/N_OE) */
+			RC5T619_write_reg(0x0F, 0);		// RICOH61x_PWR_REP_CNT
+			/* Power OFF */
+			RC5T619_write_reg(0x0E, 1);		// RICOH61x_PWR_SLP_CNT
 		}
 		else {
 			RC5T619_charger_redetect();
@@ -2181,51 +2096,31 @@ void ntx_preboot(int iBootType,char *I_pszKernCmdLine,
 {
 	char *pcEnv_bootargs=I_pszKernCmdLine;
 	char *pcLPJ;
-	//unsigned char bSysPartType,bRootFsType,bUIStyle,bCustomer;
+	unsigned char bSysPartType,bRootFsType,bUIStyle;
 	unsigned long dwBootArgsLen;
 	char cCmdA[128];
-
 	
-	ASSERT(gptNtxHwCfg);
 #ifdef CONFIG_MFG
 	if(gptNtxHwCfg) {
 		if(46==gptNtxHwCfg->m_val.bPCB || 48==gptNtxHwCfg->m_val.bPCB ||
-			 50==gptNtxHwCfg->m_val.bPCB || 51==gptNtxHwCfg->m_val.bPCB ||
-			 ( gptNtxHwCfg->m_val.bPCB>=58 && 0==gptNtxHwCfg->m_val.bIFlash) )
-		{
-			strcat(O_pszKernCmdLine," boot_port=1");// SD2
-		}
-		else if(NTXHWCFG_TST_FLAG(gptNtxHwCfg->m_val.bPCB_Flags2,0)) {
-			strcat(O_pszKernCmdLine," boot_port=0");// SD1
-		}
-		else {
-			strcat(O_pszKernCmdLine," boot_port=3");// SD4
-		}
+			 50==gptNtxHwCfg->m_val.bPCB || 51==gptNtxHwCfg->m_val.bPCB) 
+			strcat(O_pszKernCmdLine," boot_port=1");
+		else
+			strcat(O_pszKernCmdLine," boot_port=3");
 	}
-
-#if (PHYS_SDRAM_1_SIZE==(256*1024*1024)) //[
-	strcat(O_pszKernCmdLine," mem=242M");
-#elif (PHYS_SDRAM_1_SIZE==(512*1024*1024)) //][
-	strcat(O_pszKernCmdLine," mem=500M");
-#elif (PHYS_SDRAM_1_SIZE==(1024*1024*1024)) //][
-	strcat(O_pszKernCmdLine," mem=1010M");
-#else //][ 
-	#error "PHYS_SDRAM_1_SIZE value not supported ! please check !!"
-#endif //]
-
 	return;
 #endif
 
-
+	if(!gptNtxHwCfg) {
+		_load_isd_hwconfig();
+	}
 	
 	isBatCritical();
 	
 	giNtxBootMode = _detect_bootmode();
 	
-	
 
 	NtxHiddenMem_load_ntxbin(&gtNtxHiddenMem_waveform,0);
-	NtxHiddenMem_load_ntxbin(&gtNtxHiddenMem_ntxfw,0);
 
 	NtxHiddenMem_append_kcmdline(I_pszKernCmdLine,I_dwKernCmdLineSize,O_pszKernCmdLine);
 
@@ -2233,15 +2128,12 @@ void ntx_preboot(int iBootType,char *I_pszKernCmdLine,
 	sprintf(cCmdA," boot_port=%d",_get_boot_sd_number());
 	strcat(O_pszKernCmdLine,cCmdA);
 
-BOOTMODE_ENTRY:
-
-	//printf("%s(%d):bootmode=%d\n",__FUNCTION__,__LINE__,giNtxBootMode);
 	switch(giNtxBootMode)	{
 	case NTX_BOOTMODE_ISD:
 		if(gptNtxHwCfg) {
 			if(9==gptNtxHwCfg->m_val.bCustomer) {
 				_led_R(0);
-				_led_G(1);
+				_led_G(0);
 				_led_B(1);
 			}
 		}
@@ -2262,30 +2154,9 @@ BOOTMODE_ENTRY:
 			printf("fastboot : no hwconfig !\n");
 		}
 		run_command("fastboot q0",0);
-		if(12==gptNtxHwCfg->m_val.bKeyPad) {
-			// models without keys
-#if 0 //[
-			if(2==ntx_wait_powerkey(2,-1,0)) 
-#else //][
-			if(0==ntx_wait_powerkey(10,1,1)) // if user pressing and holding power key over 10 secs will return 0 or break and return non zero . 
-#endif//]
-			{
-				// power key clicked .
-				printf("enter recovery ...\n");
-				giNtxBootMode=NTX_BOOTMODE_RECOVERY;
-				goto BOOTMODE_ENTRY ;
-			}
-			else {
-				giNtxBootMode=NTX_BOOTMODE_ISD;
-			}
-		}
+		giNtxBootMode=NTX_BOOTMODE_ISD;
 		break;
 #endif//] CONFIG_FASTBOOT
-
-	case NTX_BOOTMODE_SDOWNLOAD:
-		run_command("download_mode",0);
-		break;
-
 	case NTX_BOOTMODE_RECOVERY:
 		if(gptNtxHwCfg) {
 			if(9==gptNtxHwCfg->m_val.bCustomer) {
@@ -2309,7 +2180,6 @@ BOOTMODE_ENTRY:
 		break;
 
 	}
-	
 
 
 	if(!gpbKernelAddr && 0==iBootType) {
@@ -2323,24 +2193,34 @@ BOOTMODE_ENTRY:
 	}
 
 
-	{ //[ 
+	if(gptNtxHwCfg) { //[ 
 
 		//if(NTX_BOOTMODE_ESD_UPG==giNtxBootMode) {
 		//	_load_esd_hwconfig();
 		//}
 
-
+		//if(gptEsdNtxHwCfg) {
+		//	bSysPartType = gptEsdNtxHwCfg->m_val.bSysPartType ;
+		//	bRootFsType = gptEsdNtxHwCfg->m_val.bRootFsType;
+		//	bUIStyle = gptNtxHwCfg->m_val.bUIStyle;
+		//}
+		//else 
+		{
+			bSysPartType = gptNtxHwCfg->m_val.bSysPartType ;
+			bRootFsType = gptNtxHwCfg->m_val.bRootFsType;
+			bUIStyle = gptNtxHwCfg->m_val.bUIStyle;
+		}
 		
-#ifndef CONFIG_MFG //[
-		if(2==gptNtxHwCfg->m_val.bUIStyle)
-#endif //]!CONFIG_MFG
+		_load_ntx_bin(GET_ISD_NUM(),SD_OFFSET_SECS_SNMAC,1,gbSectorBufA,512);
+		if(2==bUIStyle)
 		{
 			// Android UI .
 
 			strcat(O_pszKernCmdLine," androidboot.serialno=");
-			strcat(O_pszKernCmdLine,(char *)(&gcNTX_SN[3]));
+			strcat(O_pszKernCmdLine,(char *)(&gbSectorBufA[3]));
 			//printf("bootargs=\"%s\"\n",O_pszKernCmdLine);
-#if 1
+
+#if 0
 			// only for KK android .
 			 
 			if(pcEnv_bootargs&&0==strstr(pcEnv_bootargs,"androidboot.hardware=")) {
@@ -2365,6 +2245,13 @@ BOOTMODE_ENTRY:
 				}
 			}
 #endif
+
+		}
+		else {
+			// Linux UI .
+			//if(!gpbRDaddr) {
+			//	_load_ntxrd(&gpbRDaddr,&gdwRDsize);
+			//}
 		}
 
 		//if(!gpbRDaddr)
@@ -2372,8 +2259,8 @@ BOOTMODE_ENTRY:
 			
 
 			if(pcEnv_bootargs&&0==strstr(pcEnv_bootargs,"rootfstype=")) {
-				printf("hwcfg rootfstype : %d\n",gptNtxHwCfg->m_val.bRootFsType);
-				switch(gptNtxHwCfg->m_val.bRootFsType)
+				printf("hwcfg rootfstype : %d\n",bRootFsType);
+				switch(bRootFsType)
 				{
 				case 0:
 					strcat(O_pszKernCmdLine," rootfstype=ext2");
@@ -2396,7 +2283,7 @@ BOOTMODE_ENTRY:
 			if(pcEnv_bootargs&&0==strstr(pcEnv_bootargs,"root=")) {
 				char cTempA[5] = "0";
 
-				printf("hwcfg partition type : %d\n",(int)gptNtxHwCfg->m_val.bSysPartType);
+				printf("hwcfg partition type : %d\n",(int)bSysPartType);
 				strcat(O_pszKernCmdLine," root=/dev/mmcblk");
 				if(NTX_BOOTMODE_ISD==giNtxBootMode) {
 					cTempA[0]='0';
@@ -2425,8 +2312,8 @@ BOOTMODE_ENTRY:
 				else if(NTX_BOOTMODE_ESD_UPG==giNtxBootMode){
 					cTempA[0]='1';
 					strcat(O_pszKernCmdLine,cTempA);
-								
-					switch (gptNtxHwCfg->m_val.bSysPartType)
+									
+					switch (bSysPartType)
 					{
 					default:
 					case 0://TYPE1
@@ -2443,7 +2330,7 @@ BOOTMODE_ENTRY:
 					case 12://TYPE13
 						strcat(O_pszKernCmdLine,"p3");
 						break;
-					}
+					}			
 				}
 				else if(NTX_BOOTMODE_RECOVERY==giNtxBootMode) {
 					cTempA[0]='0';
@@ -2510,14 +2397,14 @@ BOOTMODE_ENTRY:
 
 #ifdef MAC_BOFFSET_IN_SNMAC_SECTOR//[
 		if(pcEnv_bootargs&&0==strstr(pcEnv_bootargs,"fec_mac=")) {
-			if( 'M'==(char)gcNTX_SN[MAC_BOFFSET_IN_SNMAC_SECTOR+0] && \
-					'A'==(char)gcNTX_SN[MAC_BOFFSET_IN_SNMAC_SECTOR+1] && \
-					'C'==(char)gcNTX_SN[MAC_BOFFSET_IN_SNMAC_SECTOR+2] && \
-					'='==(char)gcNTX_SN[MAC_BOFFSET_IN_SNMAC_SECTOR+3] && \	
-					'\0'==(char)gcNTX_SN[MAC_BOFFSET_IN_SNMAC_SECTOR+4+17] )
+			if( 'M'==(char)gbSectorBufA[MAC_BOFFSET_IN_SNMAC_SECTOR+0] && \
+					'A'==(char)gbSectorBufA[MAC_BOFFSET_IN_SNMAC_SECTOR+1] && \
+					'C'==(char)gbSectorBufA[MAC_BOFFSET_IN_SNMAC_SECTOR+2] && \
+					'='==(char)gbSectorBufA[MAC_BOFFSET_IN_SNMAC_SECTOR+3] && \	
+					'\0'==(char)gbSectorBufA[MAC_BOFFSET_IN_SNMAC_SECTOR+4+17] )
 			{
 				strcat(O_pszKernCmdLine," fec_mac=");
-				strcat(O_pszKernCmdLine,&gcNTX_SN[MAC_BOFFSET_IN_SNMAC_SECTOR+4]);
+				strcat(O_pszKernCmdLine,&gbSectorBufA[MAC_BOFFSET_IN_SNMAC_SECTOR+4]);
 			}
 		}
 #endif//]MAC_BOFFSET_IN_SNMAC_SECTOR
@@ -2604,199 +2491,5 @@ U_BOOT_CMD(load_ntxbins, 2, 0, do_load_ntxbins,
 		" - load netronix binaries from sd card (hwcfg,logo,waveform).\n"
 );
 //] gallen add 2011/03/02
-
-static unsigned char *boot_recovery="boot-recovery";
-//static unsigned char *wipe_data="recovery\x0A--wipe_data\x0A--locale=en_US\x0A";
-static unsigned char *wipe_data="recovery\x0A--factory_fallback\x0A--locale=en_US\x0A";
-int g_ntx_misc_offset;
-extern void setup_recovery_env(void);
-
-static int read_recovery_BCB (unsigned char *pBuf)
-{
-	char cCmdA[128+1];
-	sprintf(cCmdA,"mmc dev %d",GET_ISD_NUM());
-	run_command(cCmdA,0);
-
-	if (!g_ntx_misc_offset) {
-		sprintf(cCmdA,"mmc part");
-		run_command(cCmdA,0);
-		if (!g_ntx_misc_offset) {
-			printf ("misc partition not found!!\n");
-			return -1;
-		}
-	}
-
-#ifdef MMC_CMD_SEPERATED_SDNUM
-	sprintf(cCmdA,"mmc read 0x%x 0x%x 0x1",(unsigned)pBuf, g_ntx_misc_offset);
-#else //][!MMC_CMD_SEPERATED_SDNUM	
-	sprintf(cCmdA,"mmc read %d 0x%x 0x%x 0x1", GET_ISD_NUM(), (unsigned)pBuf, g_ntx_misc_offset);
-#endif //]MMC_CMD_SEPERATED_SDNUM
-	printf ("Writing recovery BCB to misc partition...\n%s\n",cCmdA);
-	run_command(cCmdA, 0);//
-	return 0;
-}
-
-int write_recovery_BCB (char *pBuf)
-{
-	char cCmdA[128+1];
-	unsigned char cBCB[512], *pBCB;
-
-	sprintf(cCmdA,"mmc dev %d",GET_ISD_NUM());
-	run_command(cCmdA,0);
-
-	if (!g_ntx_misc_offset) {
-		sprintf(cCmdA,"mmc part");
-		run_command(cCmdA,0);
-		if (!g_ntx_misc_offset) {
-			printf ("misc partition not found!!\n");
-			return 0;
-		}
-	}
-
-	if (pBuf) {
-		pBCB = pBuf;
-		printf ("Writing boot count %d to misc partition (offset %d)...\n", pBuf[64], g_ntx_misc_offset);
-	}
-	else {
-		memset (cBCB, 0, 512);
-		strcpy (cBCB, boot_recovery);
-		strcpy (&cBCB[64], wipe_data);
-		pBCB = cBCB;
-		printf ("Writing recovery BCB to misc partition (offset %d)...\n", g_ntx_misc_offset);
-	}
-
-#ifdef MMC_CMD_SEPERATED_SDNUM
-	sprintf(cCmdA,"mmc write 0x%x 0x%x 0x1",(unsigned)pBCB, g_ntx_misc_offset);
-#else //][!MMC_CMD_SEPERATED_SDNUM	
-	sprintf(cCmdA,"mmc write %d 0x%x 0x%x 0x1", GET_ISD_NUM(), (unsigned)pBCB, g_ntx_misc_offset);
-#endif //]MMC_CMD_SEPERATED_SDNUM
-	run_command(cCmdA, 0);//
-
-//	if (!pBuf)
-//		setup_recovery_env();
-	return 0;
-}
-
-#define NTX_BOOT_CNT_SIG	"NTX_BOOT_COUNT"
-int ntx_check_and_increase_boot_count (void)
-{
-	unsigned char cMiscA[512];
-	if (0 == read_recovery_BCB (cMiscA)) {
-		if (!strcmp (cMiscA, boot_recovery)) {	// enter recovery if recovery flag found.
-			printf ("Recovery BCB found, skip count!\n");
-			return 1;
-		}
-		
-//#ifdef NTX_ANDROID_BOOT_FAIL_COUNT
-		if (!strcmp (cMiscA, NTX_BOOT_CNT_SIG)) {
-			if (4 < ++cMiscA[64]) {
-				write_recovery_BCB (0);
-				return 1;
-			}
-			else 
-				write_recovery_BCB (cMiscA);
-		}
-		else {
-			memset (cMiscA, 0, 512);
-			strcpy (cMiscA, NTX_BOOT_CNT_SIG);
-			++cMiscA[64];
-			write_recovery_BCB (cMiscA);
-		}
-//#endif
-	}
-	else 
-		printf ("misc partition not found!!\n");
-
-	return 0;
-}
-
-
-unsigned long long ntx_get_timeout_ustick(unsigned long dwUS)
-{
-	unsigned long long u64_timeout_tick,u64_ticks;
-	u64_ticks = mx6_us_to_tick((unsigned long long)dwUS);
-	u64_timeout_tick = get_ticks() + u64_ticks;
-	return u64_timeout_tick;
-}
-
-int ntx_is_tick_timeout(unsigned long long u64TimeoutTick)
-{
-	unsigned long long u64_current_tick = get_ticks();
-	if(u64_current_tick>=u64TimeoutTick) {
-		return 1;
-	}
-	else {
-		return 0;
-	}
-}
-
-
-/*
- *
- */ 
-int ntx_wait_powerkey(int iWaitSecs,int iWaitPwrKeyStatChgTimes,int iChkEnterPwrKeyState)
-{
-	unsigned long long u64_timeout_tick = ntx_get_timeout_ustick(iWaitSecs*1000*1000);
-	unsigned long dwLoopCnt =	0;
-	int iLedOnOff=0;
-	int iPwrkeyLastState,iPwrkeyCurState;
-	unsigned long dwPwrkeyStatChgCnt =	0;
-#define PWRKEY_DEBOUNCE_TOTAL		80000
-	unsigned long dwPwrkeyDebounceCnt=0;
-
-	if(iChkEnterPwrKeyState!=-1) {
-		iPwrkeyLastState=_power_key_status();
-		if(iPwrkeyLastState!=iChkEnterPwrKeyState) {
-			return -1;
-		}
-	}
-
-	printf("%s() : checking power key ...\n",__FUNCTION__);
-	do {
-
-		if(0==(dwLoopCnt&0xfff)) {
-			_led_R(iLedOnOff);
-			_led_G(iLedOnOff);
-			_led_B(iLedOnOff);
-			iLedOnOff = (iLedOnOff)?0:1;
-		}
-
-
-		if(0==dwPwrkeyDebounceCnt) {
-			iPwrkeyCurState = _power_key_status();
-			if( iPwrkeyCurState != iPwrkeyLastState ) {
-				dwPwrkeyStatChgCnt++;
-
-				if((unsigned long)iWaitPwrKeyStatChgTimes==dwPwrkeyStatChgCnt) {
-					break; 
-				}
-
-				dwPwrkeyDebounceCnt=PWRKEY_DEBOUNCE_TOTAL;
-				iPwrkeyLastState = iPwrkeyCurState;
-			}
-		}
-		else {
-			dwPwrkeyDebounceCnt--;
-		}
-
-		
-
-		if(ntx_is_tick_timeout(u64_timeout_tick)) {
-			printf("%s():times out!!!\n",__FUNCTION__);
-			break;
-		}
-
-		dwLoopCnt++;
-	}while (1);
-
-
-	if(dwPwrkeyStatChgCnt) {
-		printf("%s():power key stat changed %d!!!\n",__FUNCTION__,dwPwrkeyStatChgCnt);
-		return (int)dwPwrkeyStatChgCnt;
-	}
-
-	return 0;
-}
-
 
 

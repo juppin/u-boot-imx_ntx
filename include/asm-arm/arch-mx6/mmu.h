@@ -164,7 +164,10 @@ void *__ioremap(unsigned long offset, size_t size, unsigned long flags)
 	if (1 == flags) {
 		if (offset >= PHYS_SDRAM_1 &&
 		offset < (unsigned long)(PHYS_SDRAM_1 + PHYS_SDRAM_1_SIZE))
+		{
+			//v7_dma_inv_range((char*)offset, (char*)offset + size);
 			return (void *)(offset + 0x78000000);
+		}
 		else
 			return NULL;
 	} else

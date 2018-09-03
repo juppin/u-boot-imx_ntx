@@ -55,11 +55,6 @@ select_pcba() {
 		"E60QA0" "PCBA=E60QA0,LPDDR2 256MB" \
 		"ED0Q00" "PCBA=ED0Q00,LPDDR2 512MB" \
 		"E60QD0" "PCBA=E60QD0,LPDDR2 512MB" \
-		"E70Q00" "PCBA=E70Q00,LPDDR2 512MB" \
-		"E60QM0" "PCBA=E60QM0,LPDDR2 512MB" \
-		"E60QN0" "PCBA=E60QN0,LPDDR2 1024MB" \
-		"E60QJ0" "PCBA=E60QJ0,LPDDR2 or DDR3 512MB" \
-		"E60QL0" "PCBA=E60QL0,LPDDR2 256MB" \
 	>"${tmpresult}2"
 	retval=$?
 	if [ "${retval}" = "0" ];then
@@ -73,7 +68,6 @@ select_ram_size() {
 	LANG=C dialog --stdout --ascii-lines --title "mx6sl u-boot select" --menu "RAM size selection" 15 70 13 \
 		"256" "256MB RAM size" \
 		"512" "512MB RAM size" \
-		"1024" "1024MB RAM size" \
 	>"${tmpresult}2"
 	retval=$?
 	if [ "${retval}" = "0" ];then
@@ -104,38 +98,73 @@ elif [ "${PCBA}" = "E60Q10" ];then
 
 	make distclean
 	make ARCH=arm CROSS_COMPILE=/opt/freescale/usr/local/gcc-4.6.2-glibc-2.13-linaro-multilib-2011.12/fsl-linaro-toolchain/bin/arm-fsl-linux-gnueabi- mx6sl_ntx_lpddr2_config
-elif [ "${PCBA}" = "E60Q20-256MB" ];then
-	RAMSIZE="256"
-	RAM_TYPE="lpddr2"
-	RAMTYPE="LPDDR2"
+elif [ "${PCBA}" = "E60Q20" ] || [ "${PCBA}" = "E60Q30" ] || [ "${PCBA}" = "E60QB0" ] || \
+	 [ "${PCBA}" = "E60Q50" ] || [ "${PCBA}" = "E60Q60" ] || [ "${PCBA}" = "E60Q80" ] || \
+	 [ "${PCBA}" = "E60QC0" ] || [ "${PCBA}" = "E60Q90" ] || [ "${PCBA}" = "ED0Q00" ] || \
+	 [ "${PCBA}" = "E60QA0" ] || [ "${PCBA}" = "E60QD0" ];then
 
-	make distclean
-	make ARCH=arm CROSS_COMPILE=/opt/freescale/usr/local/gcc-4.6.2-glibc-2.13-linaro-multilib-2011.12/fsl-linaro-toolchain/bin/arm-fsl-linux-gnueabi- mx6sl_ntx_lpddr2_256m_config
-else 
-	RAM_TYPE="lpddr2"
-	RAMTYPE="LPDDR2"
-	RAMSIZE="512"
 
-	if [ "${PCBA}" = "E60Q90" ];then
+	if [ "${PCBA}" = "E60QB0" ] || [ "${PCBA}" = "E60QA0" ];then
+		#select_ram_size
+		RAMSIZE="256"
+	else
+		RAMSIZE="512"
+	fi
+
+	if [ "${PCBA}" = "E60Q80" ];then
+		pushd "board/freescale/mx6sl_ntx"
+		rm "flash_header.S"
+		ln -s "20140731_Netronix_MX6SL_LPDDR2_512MB_000.inc.flash_header.S" "flash_header.S"
+		popd 
+	elif [ "${PCBA}" = "ED0Q00" ];then
+		pushd "board/freescale/mx6sl_ntx"
+		rm "flash_header.S"
+		ln -s "MX6SL_MMDC_LPDDR2_register_programming_aid_v0.9.inc.flash_header.S" "flash_header.S"
+		popd 
+	elif [ "${PCBA}" = "E60Q90" ];then
 		select_ram_size
 		[ $? != 0 ] && echo "select ram size fail !" && exit 1
-	elif [ "${PCBA}" = "E60QB0" ] || [ "${PCBA}" = "E60QA0" ] || [ "${PCBA}" = "E60QL0" ];then
-		RAMSIZE="256"
-	elif [ "${PCBA}" = "E60QN0" ];then
-		RAMSIZE="1024"
-	elif [ "${PCBA}" = "E60QJ0" ]; then
-		select_ramtype
-		[ $? != 0 ] && echo "select ram type fail !" && exit 1
+		pushd "board/freescale/mx6sl_ntx"
+		rm "flash_header.S"
+		ln -s "flash_header.E60Q90.S" "flash_header.S"
+		popd 
+	elif [ "${PCBA}" = "E60QD0" ];then
+		#select_ram_size
+		#[ $? != 0 ] && echo "select ram size fail !" && exit 1
+		pushd "board/freescale/mx6sl_ntx"
+		rm "flash_header.S"
+		ln -s "flash_header.E60QD0.S" "flash_header.S"
+		popd 
+	else
+		pushd "board/freescale/mx6sl_ntx"
+		rm "flash_header.S"
+		ln -s "flash_header.S_mp" "flash_header.S"
+		popd
+	fi
+
+	if [ "${RAMSIZE}" = "256" ];then
+		UBOOT_CFG="mx6sl_ntx_lpddr2-MT42L128M32D1-256MB_config"
+	else
+		UBOOT_CFG="mx6sl_ntx_lpddr2-MT42L128M32D1_config"
 	fi
 
 	RAMSIZE_BYTES="$(echo "${RAMSIZE}"|awk '{print $1*1024*1024}')"
-
-	UBOOT_CFG="${PCBA}-${RAMTYPE}-${RAMSIZE}_config"
+	RAM_TYPE="lpddr2"
+	RAMTYPE="LPDDR2"
 
 	make distclean
 	make ARCH=arm CROSS_COMPILE=/opt/freescale/usr/local/gcc-4.6.2-glibc-2.13-linaro-multilib-2011.12/fsl-linaro-toolchain/bin/arm-fsl-linux-gnueabi- "${UBOOT_CFG}"
-fi
+elif [ "${PCBA}" = "E60Q20-256MB" ];then
+        RAMSIZE="256"
+        RAM_TYPE="lpddr2"
+        RAMTYPE="LPDDR2"
 
+        make distclean
+        make ARCH=arm CROSS_COMPILE=/opt/freescale/usr/local/gcc-4.6.2-glibc-2.13-linaro-multilib-2011.12/fsl-linaro-toolchain/bin/arm-fsl-linux-gnueabi- mx6sl_ntx_lpddr2_256m_config
+else
+	echo "unkown PCBA \"${PCBA}\""
+	exit 1
+fi
 make ARCH=arm CROSS_COMPILE=/opt/freescale/usr/local/gcc-4.6.2-glibc-2.13-linaro-multilib-2011.12/fsl-linaro-toolchain/bin/arm-fsl-linux-gnueabi- #|tee make.log
 
 mv "u-boot.bin" "u-boot_${RAM_TYPE}_${RAMSIZE}-${PCBA}-${RAMTYPE}.bin"

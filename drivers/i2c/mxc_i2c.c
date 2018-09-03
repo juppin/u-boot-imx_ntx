@@ -52,7 +52,7 @@
 # error "define CONFIG_SYS_I2C_PORT(I2C base address) to use the I2C driver"
 #endif
 
-#define I2C_MAX_TIMEOUT		100000
+#define I2C_MAX_TIMEOUT		1000//100000 //@Sam
 #define I2C_TIMEOUT_TICKET	1
 
 #undef DEBUG
@@ -142,7 +142,7 @@ static int wait_complete(void)
 static int tx_byte(u8 byte)
 {
 	__REG16(I2C_BASE + I2DR) = byte;
-
+	//printf("[NTX] tx_byte(%d)", byte);
 	if (!wait_complete() || __REG16(I2C_BASE + I2SR) & I2SR_RX_NO_AK) {
 		DPRINTF("%s:%x <= %x\n", __func__, __REG16(I2C_BASE + I2SR),
 			byte);
@@ -168,10 +168,10 @@ static int rx_byte(u32 *pdata, int last)
 int i2c_probe(uchar chip)
 {
 	int ret;
-
+	//printf("[NTX] i2c_probe in mxc_i2c.c\n");
 	__REG16(I2C_BASE + I2CR) = 0;	/* Reset module */
 	__REG16(I2C_BASE + I2CR) = I2CR_IEN;
-	for (ret = 0; ret < 1000; ret++)
+	for (ret = 0; ret < 50; ret++)
 		udelay(1);
 	__REG16(I2C_BASE + I2CR) = I2CR_IEN | I2CR_MSTA | I2CR_MTX;
 	ret = tx_byte(chip << 1);

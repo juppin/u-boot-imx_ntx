@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012-2013 Freescale Semiconductor, Inc.
+ * Copyright (C) 2012 Freescale Semiconductor, Inc.
  *
  * Configuration settings for the MX6Q Sabre Lite2 Freescale board.
  *
@@ -24,6 +24,7 @@
 
 #include "mx6q_sabresd.h"
 
+#if 0
 #define CONFIG_USB_DEVICE
 #define CONFIG_IMX_UDC		       1
 #define CONFIG_FASTBOOT		       1
@@ -41,10 +42,11 @@
 /*  For system.img growing up more than 256MB, more buffer needs
 *   to receive the system.img*/
 #define CONFIG_FASTBOOT_TRANSFER_BUF	0x2c000000
-#define CONFIG_FASTBOOT_TRANSFER_BUF_SIZE 0x20000000 /* 512M byte */
+#define CONFIG_FASTBOOT_TRANSFER_BUF_SIZE 0x14000000 /* 320M byte */
+#endif
 
 #define CONFIG_CMD_BOOTI
-#define CONFIG_ANDROID_RECOVERY
+//#define CONFIG_ANDROID_RECOVERY
 /* which mmc bus is your main storage ? */
 #define CONFIG_ANDROID_MAIN_MMC_BUS 3
 #define CONFIG_ANDROID_BOOT_PARTITION_MMC 1
@@ -56,8 +58,6 @@
 #define CONFIG_ANDROID_RECOVERY_BOOTARGS_MMC NULL
 #define CONFIG_ANDROID_RECOVERY_BOOTCMD_MMC  \
 	"booti mmc3 recovery"
-#define CONFIG_ANDROID_RECOVERY_BOOTCMD_SD  \
-	"booti mmc2 recovery"
 #define CONFIG_ANDROID_RECOVERY_CMD_FILE "/recovery/command"
 #define CONFIG_INITRD_TAG
 
@@ -73,6 +73,8 @@
 #define	CONFIG_EXTRA_ENV_SETTINGS					\
 		"netdev=eth0\0"						\
 		"ethprime=FEC0\0"					\
+		"fastboot_dev=mmc3\0"					\
+		"bootcmd=booti mmc3\0"					\
 		"splashimage=0x30000000\0"				\
 		"splashpos=m,m\0"					\
 		"lvds_num=1\0"

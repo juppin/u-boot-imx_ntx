@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2013 Freescale Semiconductor, Inc.
+ * Copyright (C) 2010-2012 Freescale Semiconductor, Inc.
  *
  * Configuration settings for the MX6Q Armadillo2 Freescale board.
  *
@@ -24,6 +24,11 @@
 
 #include "mx6q_arm2.h"
 
+/* Disable secure boot feature in default, if you want to enable this
+ * feature, please carefully read related documents, you may needs to
+ * change u-boot.lds */
+#undef CONFIG_SECURE_BOOT
+
 /* Disable fastboot and recovery to pass build.
 
   ARM2 is not a complete android board, only support boot from
@@ -47,7 +52,7 @@
 /*  For system.img growing up more than 256MB, more buffer needs
 *   to receive the system.img*/
 #define CONFIG_FASTBOOT_TRANSFER_BUF	0x2c000000
-#define CONFIG_FASTBOOT_TRANSFER_BUF_SIZE 0x20000000 /* 512M byte */
+#define CONFIG_FASTBOOT_TRANSFER_BUF_SIZE 0x14000000 /* 320M byte */
 #define CONFIG_ANDROID_RECOVERY
 
 #define CONFIG_CMD_BOOTI

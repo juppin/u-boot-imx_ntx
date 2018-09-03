@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012-2013 Freescale Semiconductor, Inc.
+ * Copyright (C) 2012 Freescale Semiconductor, Inc.
  *
  * Configuration settings for the MX6Solo SABRE-AI Freescale board.
  *
@@ -132,7 +132,7 @@
  * Miscellaneous configurable options
  */
 #define CONFIG_SYS_LONGHELP		/* undef to save memory */
-#define CONFIG_SYS_PROMPT		"MX6DL SABREAUTO U-Boot > "
+#define CONFIG_SYS_PROMPT		"MX6SOLO SABREAUTO U-Boot > "
 #define CONFIG_AUTO_COMPLETE
 #define CONFIG_SYS_CBSIZE		1024	/* Console I/O Buffer Size */
 /* Print Buffer Size */
@@ -310,7 +310,7 @@
 #elif defined(CONFIG_FSL_ENV_IN_SF)
 	#define CONFIG_ENV_IS_IN_SPI_FLASH	1
 	#define CONFIG_ENV_SPI_CS		1
-	#define CONFIG_ENV_OFFSET       0x40000
+	#define CONFIG_ENV_OFFSET       (768 * 1024)
 #else
 	#define CONFIG_ENV_IS_NOWHERE	1
 #endif

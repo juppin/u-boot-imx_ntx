@@ -145,38 +145,32 @@ static void print_mmcinfo(struct mmc *mmc)
 	}
 }
 
-int do_mmcinfo(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+int do_mmcinfo (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 {
 	struct mmc *mmc;
+	int dev_num;
 
-	if (curr_device < 0) {
-		if (get_mmc_num() > 0)
-			curr_device = 0;
-		else {
-			puts("No MMC device available\n");
-			return 1;
-		}
-	}
+	if (argc < 2)
+		dev_num = 0;
+	else
+		dev_num = simple_strtoul(argv[1], NULL, 0);
 
-	mmc = find_mmc_device(curr_device);
+	mmc = find_mmc_device(dev_num);
 
 	if (mmc) {
-		mmc_init(mmc);
-
-		print_mmcinfo(mmc);
-		return 0;
-	} else {
-		printf("no mmc device at slot %x\n", curr_device);
-		return 1;
+		if (mmc_init(mmc)) 
+			puts("MMC card init failed!\n");
+		else
+			print_mmcinfo(mmc);
 	}
+
+	return 0;
 }
 
-U_BOOT_CMD(
-	mmcinfo, 1, 0, do_mmcinfo,
-	"display MMC info",
-	"    - device number of the device to dislay info of\n"
+U_BOOT_CMD(mmcinfo, 2, 0, do_mmcinfo,
+	"mmcinfo <dev num>-- display MMC info",
 	""
-);
+); //@Sam replace with MX5's
 
 int do_mmcops(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 {
@@ -220,7 +214,9 @@ int do_mmcops(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 		mmc_dev = mmc_get_dev(curr_device);
 		if (mmc_dev != NULL &&
 				mmc_dev->type != DEV_TYPE_UNKNOWN) {
+#ifndef CONFIG_NOFS
 			print_part(mmc_dev);
+#endif
 			return 0;
 		}
 

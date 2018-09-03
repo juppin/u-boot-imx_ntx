@@ -7,9 +7,6 @@ extern "C" {
 #endif //] __cplusplus
 
 
-#define NTX_HWCFG_MAGIC				"HW CONFIG "
-#define NTX_HWCFG_VER					"v2.8"
-
 #define SYSHWCONFIG_SEEKSIZE	(1024*512)
 
 
@@ -74,17 +71,6 @@ typedef struct tagNTXHWCFG_VAL {
 	unsigned char bFM;//FM module .
 	unsigned char bRSensor2;//
 	unsigned char bLightSensor;//
-	unsigned char bTPFWIDByte0;// TP firmware ID byte0 .
-	unsigned char bTPFWIDByte1;// TP firmware ID byte1 .
-	unsigned char bTPFWIDByte2;// TP firmware ID byte2 .
-	unsigned char bTPFWIDByte3;// TP firmware ID byte3 .
-	unsigned char bTPFWIDByte4;// TP firmware ID byte4 .
-	unsigned char bTPFWIDByte5;// TP firmware ID byte5 .
-	unsigned char bTPFWIDByte6;// TP firmware ID byte6 .
-	unsigned char bTPFWIDByte7;// TP firmware ID byte7 .
-	unsigned char bGPU; //GPU .
-	unsigned char bPCB_Flags2;// PCB Flags2 .
-	unsigned char bEPD_Flags;// EPD Flags .
 } NTXHWCFG_VAL ;
 
 typedef struct tagNTX_HWCONFG{
@@ -152,7 +138,6 @@ extern const char * gszRTCA[];// System RTC source .
 extern const char * gszFMA[];// FM controller .
 extern const char * gszGPSA[];// GPS controller .
 extern const char * gszLightSensorA[];// Light sensor .
-extern const char * gszGPUA[];// GPU .
 
 
 // the return value of hw config apis . >=0 is success ,others is fail .
@@ -232,17 +217,6 @@ extern const char * gszGPUA[];// GPU .
 #define HWCFG_FLDIDX_FM					51 // v2.4
 #define HWCFG_FLDIDX_RSensor2					52 // v2.5
 #define HWCFG_FLDIDX_LightSensor					53 // v2.5
-#define HWCFG_FLDIDX_TPFWIDByte0					54 // v2.6
-#define HWCFG_FLDIDX_TPFWIDByte1					55 // v2.6
-#define HWCFG_FLDIDX_TPFWIDByte2					56 // v2.6
-#define HWCFG_FLDIDX_TPFWIDByte3					57 // v2.6
-#define HWCFG_FLDIDX_TPFWIDByte4					58 // v2.6
-#define HWCFG_FLDIDX_TPFWIDByte5					59 // v2.6
-#define HWCFG_FLDIDX_TPFWIDByte6					60 // v2.6
-#define HWCFG_FLDIDX_TPFWIDByte7					61 // v2.6
-#define HWCFG_FLDIDX_GPU									62 // v2.7
-#define HWCFG_FLDIDX_PCB_Flags2						63 // v2.8
-#define HWCFG_FLDIDX_EPD_Flags						64 // v2.8
 
 
 
@@ -274,7 +248,6 @@ int NtxHwCfg_GetCfgFldFlagVal(NTX_HWCONFIG *pHdr,int iFieldIdx,int iFlagsIdx);
 int NtxHwCfg_GetCfgFldFlagValByName(NTX_HWCONFIG *pHdr,int iFieldIdx,const char *pszFlagName);
 
 int NtxHwCfg_SetCfgFldVal(NTX_HWCONFIG *pHdr,int iFieldIdx,int iFieldVal);
-int NtxHwCfg_SetCfgFldValEx(NTX_HWCONFIG *pHdr,int iFieldIdx,int iFieldVal,int iHW_WR_Protect);
 int NtxHwCfg_SetCfgFldStrVal(NTX_HWCONFIG *pHdr,int iFieldIdx,const char *pszFieldStrVal);
 int NtxHwCfg_SetCfgFldStrValEx(NTX_HWCONFIG *pHdr,int iFieldIdx,const char *pszFieldStrVal,int iHW_WR_Protect);
 int NtxHwCfg_SetCfgFldFlagValByName(NTX_HWCONFIG *pHdr,int iFieldIdx,const char *pszFlagName,int iIsTurnON,int iHW_WR_Protect);
@@ -290,71 +263,6 @@ int NtxHwCfg_CompareHdrFldVersion(NTX_HWCONFIG *pHdr,int iFieldIdx);
 #define NTXHWCFG_GET_FLDCFGPRTFMT(pHdr,_fld)	"%s : %s",#_fld,NTXHWCFG_GET_FLDCFGNAME(pHdr,_fld)
 
 #define NTXHWCFG_TST_FLAG(_flags,_bit_n)	((_flags)&(0x01<<(_bit_n)))?1:0
-
-
-#define NTXHWCFG_CHK_HDR(_pHdr,_iIsIgnoreVersion,_pcCompareHdrVersionA) \
-({\
-	int _iRet ;\
-	const char szNtxHwCfgMagic[]=NTX_HWCFG_MAGIC;\
-	char *_pcHdrVer=(_pcCompareHdrVersionA);\
-	\
-	if(!(_pHdr)) {\
-		_iRet = HWCFG_RET_PTRERR;\
-	}\
-	else {\
-		if(szNtxHwCfgMagic[0]==(_pHdr)->m_hdr.cMagicNameA[0] &&\
-			szNtxHwCfgMagic[1]==(_pHdr)->m_hdr.cMagicNameA[1] &&\
-			szNtxHwCfgMagic[2]==(_pHdr)->m_hdr.cMagicNameA[2] &&\
-			szNtxHwCfgMagic[3]==(_pHdr)->m_hdr.cMagicNameA[3] &&\
-			szNtxHwCfgMagic[4]==(_pHdr)->m_hdr.cMagicNameA[4] &&\
-			szNtxHwCfgMagic[5]==(_pHdr)->m_hdr.cMagicNameA[5] &&\
-			szNtxHwCfgMagic[6]==(_pHdr)->m_hdr.cMagicNameA[6] &&\
-			szNtxHwCfgMagic[7]==(_pHdr)->m_hdr.cMagicNameA[7] &&\
-			szNtxHwCfgMagic[8]==(_pHdr)->m_hdr.cMagicNameA[8] &&\
-			szNtxHwCfgMagic[9]==(_pHdr)->m_hdr.cMagicNameA[9] )\
-		{\
-			if((_iIsIgnoreVersion)) {\
-				_iRet = HWCFG_RET_SUCCESS;\
-			}\
-			else if((_pcHdrVer)) {\
-				if(_pcHdrVer[0]==(_pHdr)->m_hdr.cVersionNameA[0] &&\
-					_pcHdrVer[2]==(_pHdr)->m_hdr.cVersionNameA[2] &&\
-					_pcHdrVer[4]==(_pHdr)->m_hdr.cVersionNameA[4] ) \
-				{\
-					if((_pHdr)->m_hdr.cVersionNameA[1]>_pcHdrVer[1]) {\
-						_iRet = HWCFG_RET_CFGVERTOONEW;\
-					}\
-					else if((_pHdr)->m_hdr.cVersionNameA[1]<_pcHdrVer[1]) {\
-						_iRet = HWCFG_RET_CFGVERTOOOLD;\
-					}\
-					else {\
-						if((_pHdr)->m_hdr.cVersionNameA[3]>_pcHdrVer[3]) {\
-							_iRet = HWCFG_RET_CFGVERTOONEW;\
-						}\
-						else if((_pHdr)->m_hdr.cVersionNameA[3]<_pcHdrVer[3]) {\
-							_iRet = HWCFG_RET_CFGVERTOOOLD;\
-						}\
-						else {\
-							_iRet = HWCFG_RET_SUCCESS;\
-						}\
-					}\
-				}\
-				else {\
-					_iRet = HWCFG_RET_CFGVERFMTERR;\
-				}\
-			}\
-			else {\
-				_iRet = HWCFG_RET_PTRERR;\
-			}\
-		}\
-		else {\
-			_iRet = HWCFG_RET_HDRNOTMATCH;\
-		}\
-	}\
-	_iRet;\
-})
-
-
 
 #ifdef __cplusplus //[
 }

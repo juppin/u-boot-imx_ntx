@@ -507,13 +507,6 @@ int ntxup_wait_key(unsigned char *pbWaitKeysMaskA,int iIntervalms,int iTimeoutms
 }
 
 
-int ntxup_wait_key_downloadmode(void) 
-{
-	int iRet=0;
-	iRet = ntx_gpio_key_is_menu_down();	
-	return iRet;
-}
-
 int ntxup_wait_key_esdupg(void) 
 {
 	int iRet=0;
@@ -528,17 +521,12 @@ int ntxup_wait_key_esdupg(void)
 	if(NTXHWCFG_TST_FLAG(gptNtxHwCfg->m_val.bPCB_Flags,0)) {
 		// no keymatrix .
 		if( 11==gptNtxHwCfg->m_val.bKeyPad||
-				16==gptNtxHwCfg->m_val.bKeyPad||
 				36==gptNtxHwCfg->m_val.bPCB||
 				40==gptNtxHwCfg->m_val.bPCB) 
 		{
-			// KeyPad Only FL key or KeyPad with HOMEPAD .
+			// KeyPad Only FL key 
 			// do not use touch home key for upgrading . 
 			iRet = ntx_gpio_key_is_fl_down();
-		}
-		else if(23==gptNtxHwCfg->m_val.bKeyPad) {
-			// TP+PGUP+PGDN 
-			iRet = ntx_gpio_key_is_pgup_down();
 		}
 		else {
 			iRet = ntx_gpio_key_is_home_down();
@@ -656,100 +644,95 @@ int ntxup_wait_touch_recovery(void)
 	current_i2c_bus = i2c_get_bus_num();
 	if( (46==gptNtxHwCfg->m_val.bPCB && gptNtxHwCfg->m_val.bPCB_REV>=0x10) ||
 			48==gptNtxHwCfg->m_val.bPCB	|| 50==gptNtxHwCfg->m_val.bPCB || 
-			51==gptNtxHwCfg->m_val.bPCB || 55==gptNtxHwCfg->m_val.bPCB ||
-			58==gptNtxHwCfg->m_val.bPCB || 65==gptNtxHwCfg->m_val.bPCB)
+			51==gptNtxHwCfg->m_val.bPCB )
 	{
 		//E60Q9X pcba rev >= 0x10
-		//E60QAX | E60QFX | E60QHX | E70Q0X | E60QJX | E60QNX .
+		//E60QAX | E60QFX | E60QHX .
 		i2c_set_bus_num (1);
 	}
 	else {
 		i2c_set_bus_num (0);
 	}
-	if(4==gptNtxHwCfg->m_val.bTouchType) {
-		// IR touch .
-
+	zforce_read (data);
+	if (7 == data[0]) {
+		i2c_write (gbZforceI2C_ChipAddr,0xEE,1,cmd_Active_v2, sizeof(cmd_Active_v2));
 		zforce_read (data);
-		if (7 == data[0]) {
-			i2c_write (gbZforceI2C_ChipAddr,0xEE,1,cmd_Active_v2, sizeof(cmd_Active_v2));
-			zforce_read (data);
-			i2c_write (gbZforceI2C_ChipAddr,0xEE,1,cmd_Resolution_v2,sizeof(cmd_Resolution_v2));
-			zforce_read (data);
-			i2c_write (gbZforceI2C_ChipAddr,0xEE,1,cmd_Frequency_v2,sizeof(cmd_Frequency_v2));
-			zforce_read (data);
-			i2c_write (gbZforceI2C_ChipAddr,0xEE,1,cmd_Dual_touch_v2,sizeof(cmd_Dual_touch_v2));
-			zforce_read (data);
-			i2c_write (gbZforceI2C_ChipAddr,0xEE,1,cmd_TouchData_v2,sizeof(cmd_TouchData_v2));
-			zforce_read (data);
-			for (retry=0;retry<100;retry++) {
-				int dataCnt;
+		i2c_write (gbZforceI2C_ChipAddr,0xEE,1,cmd_Resolution_v2,sizeof(cmd_Resolution_v2));
+		zforce_read (data);
+		i2c_write (gbZforceI2C_ChipAddr,0xEE,1,cmd_Frequency_v2,sizeof(cmd_Frequency_v2));
+		zforce_read (data);
+		i2c_write (gbZforceI2C_ChipAddr,0xEE,1,cmd_Dual_touch_v2,sizeof(cmd_Dual_touch_v2));
+		zforce_read (data);
+		i2c_write (gbZforceI2C_ChipAddr,0xEE,1,cmd_TouchData_v2,sizeof(cmd_TouchData_v2));
+		zforce_read (data);
+		for (retry=0;retry<100;retry++) {
+			int dataCnt;
 
-				_led_R(iRLight);iRLight=!iRLight;
+			_led_R(iRLight);iRLight=!iRLight;
 
-				dataCnt=zforce_read (data);
-				if (0 <= iRet && 4 == data[0]) {
-					if (2 == data[1]) {
-						int x,y;
-						unsigned long flag=0;
-						printf ("Got dual finger touched!!\n");
-						x = (data[3]<<8) | data[2];
-						y = (data[5]<<8) | data[4];
-						if (60 > x && (DEFAULT_PANEL_W-60) < y)
-							flag |= 1;
-						if ((DEFAULT_PANEL_H-60) < x && (DEFAULT_PANEL_W-60) < y)
-							flag |= 2;
-						if (60 > x && 60 > y)
-							flag |= 0x10;
-						if ((DEFAULT_PANEL_H-60) < x && 60 > y)
-							flag |= 0x20;
-						x = (data[12]<<8) | data[11];
-						y = (data[14]<<8) | data[13];
+			dataCnt=zforce_read (data);
+			if (0 <= iRet && 4 == data[0]) {
+				if (2 == data[1]) {
+					int x,y;
+					unsigned long flag=0;
+					printf ("Got dual finger touched!!\n");
+					x = (data[3]<<8) | data[2];
+					y = (data[5]<<8) | data[4];
+					if (60 > x && (DEFAULT_PANEL_W-60) < y)
+						flag |= 1;
+					if ((DEFAULT_PANEL_H-60) < x && (DEFAULT_PANEL_W-60) < y)
+						flag |= 2;
+					if (60 > x && 60 > y)
+						flag |= 0x10;
+					if ((DEFAULT_PANEL_H-60) < x && 60 > y)
+						flag |= 0x20;
+					x = (data[12]<<8) | data[11];
+					y = (data[14]<<8) | data[13];
 
-						if (60 > x && (DEFAULT_PANEL_W-60) < y)
-							flag |= 1;
-						if ((DEFAULT_PANEL_H-60) < x && (DEFAULT_PANEL_W-60) < y)
-							flag |= 2;
-						if (60 > x && 60 > y)
-							flag |= 0x10;
-						if ((DEFAULT_PANEL_H-60) < x && 60 > y)
-							flag |= 0x20;
+					if (60 > x && (DEFAULT_PANEL_W-60) < y)
+						flag |= 1;
+					if ((DEFAULT_PANEL_H-60) < x && (DEFAULT_PANEL_W-60) < y)
+						flag |= 2;
+					if (60 > x && 60 > y)
+						flag |= 0x10;
+					if ((DEFAULT_PANEL_H-60) < x && 60 > y)
+						flag |= 0x20;
 
-						if (3 == flag) {
-							_led_R (1);
-							printf ("Entering recovery mode !!\n");
-							iRet = 1;
-							break;
-						}
-						else if (0x30 == flag) {
-							_led_R (1);
-							printf ("Entering external sd boot mode !!\n");
-							iRet = 2;
-							break;
-						}
-						else if (0x11 == flag) {
-							_led_R (1);
-							printf ("Entering fastboot mode !!\n");
-							iRet = 3;
-							break;
-						}
-						else {
-							printf ("Wrong points combination ! 0x%x\n",flag);
-						}
+					if (3 == flag) {
+						_led_R (1);
+						printf ("Entering recovery mode !!\n");
+						iRet = 1;
+						break;
+					}
+					else if (0x30 == flag) {
+						_led_R (1);
+						printf ("Entering external sd boot mode !!\n");
+						iRet = 2;
+						break;
+					}
+					else if (0x11 == flag) {
+						_led_R (1);
+						printf ("Entering fastboot mode !!\n");
+						iRet = 3;
+						break;
 					}
 					else {
-	//					printf ("[%02X %02X %02X %02X %02X %02X %02X %02X %02X]\n",data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9]);
-						printf ("Wrong point!\n");
+						printf ("Wrong points combination ! 0x%x\n",flag);
 					}
 				}
-				if (!_power_key_status()) {
-					printf ("Power key released!!\n");
-					break;
+				else {
+//					printf ("[%02X %02X %02X %02X %02X %02X %02X %02X %02X]\n",data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9]);
+					printf ("Wrong point!\n");
 				}
 			}
+			if (!_power_key_status()) {
+				printf ("Power key released!!\n");
+				break;
+			}
 		}
-		else {
-			printf("Boot complete not received !!\n");
-		}
+	}
+	else {
+		printf("Boot complete not received !!\n");
 	}
 
 	i2c_set_bus_num (current_i2c_bus);
@@ -811,7 +794,6 @@ static NTX_GPIO gtNtxGpio_FL_EN = {
 
 
 void frontLightCtrl(void){
-#ifdef _MX6SL_//[
 	if(NTXHWCFG_TST_FLAG(gptNtxHwCfg->m_val.bFrontLight_Flags,0)){
 		unsigned int reg;
 
@@ -855,7 +837,6 @@ void frontLightCtrl(void){
 		}
 		ntx_gpio_init(&gtNtxGpio_FL_EN);
 	}
-#endif //]_MX6SL_
 }
 
 static int do_ntxup(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
@@ -931,10 +912,8 @@ U_BOOT_CMD(ntxup, 6, 0, do_ntxup,
 		" - polling touch each interval and wait until touch pressed .\n"
 );
 
-#ifdef _MX6SL_//[
-	#define PMIC_TPS65185	1
-#endif//] _MX6SL_
 
+#define PMIC_TPS65185	1
 #ifdef PMIC_TPS65185 //[
 
 #define TPS65185_RET_SUCCESS				(0)
@@ -1082,20 +1061,17 @@ static int do_mf_key(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 	
 	int iChk;
 
-	if(0!=gptNtxHwCfg->m_val.bHallSensor) {
-		iCurrentHallSensorState = _hallsensor_status();
-		if(iCurrentHallSensorState!=giCurrentHallSensorState) {
-			printf("fail: [S17]\n\r");
-			iKeyPressedCnt++;
-			giCurrentHallSensorState = iCurrentHallSensorState;
-		}
+	iCurrentHallSensorState = _hallsensor_status();
+	if(iCurrentHallSensorState!=giCurrentHallSensorState) {
+		printf("fail: [S17]\n\r");
+		iKeyPressedCnt++;
+		giCurrentHallSensorState = iCurrentHallSensorState;
 	}
 	
 	
 	if(NTXHWCFG_TST_FLAG(gptNtxHwCfg->m_val.bPCB_Flags,0)) 
 	{
-		//if( 12 != gptNtxHwCfg->m_val.bKeyPad ) 
-		{
+		if( 12 != gptNtxHwCfg->m_val.bKeyPad ) {
 			// not NO_Key ...
 			for(i=0;i<gi_ntx_gpio_keys;i++) {
 
@@ -1745,39 +1721,4 @@ U_BOOT_CMD(get_droid_ver, 2, 0, do_get_droid_ver,
 		"get_droid_ver ro.build.version.release - get android ro.build.version.release in build.prop .\n"
 		"....\n"
 );
-
-
-static int do_ricoh_reg(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
-{
-	{
-		unsigned char reg, val;
-
-		if (2 == argc) {
-			reg = simple_strtoul(argv[1], NULL, 16);
-			RC5T619_read_reg(reg, &val);
-			printf ("reg 0x%02X, value is 0x%02X\n",reg,val);
-			return 0;
-		}
-		else if (3 == argc) {
-			reg = simple_strtoul(argv[1], NULL, 16);
-			val = simple_strtoul(argv[2], NULL, 16);
-			RC5T619_write_reg(reg, val);
-			printf ("write reg 0x%02X, 0x%02X\n",reg,val);
-			return 0;
-
-		}
-		for (reg=0;reg < 0xFF; reg++) {
-			RC5T619_read_reg(reg, &val);
-			printf ("reg 0x%02X, 0x%02X\n",reg,val);
-		}
-	}
-	return 0;
-}
-
-U_BOOT_CMD(ricoh_reg, 3, 0, do_ricoh_reg,
-	"ricoh_reg -  read / write ricoh register .\n",
-	"ricoh_reg [register] [value] .\n"
-		"\n"
-);
-
 

@@ -9,7 +9,6 @@
 
 #define CONFIG_MFG
 
-#include "mx6sl_ntx_android.h"
 #include "mx6sl_ntx.h"
 
 #endif //]__mx6sl_ntx_lpddr2_h

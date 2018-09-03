@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2013 Freescale Semiconductor, Inc.
+ * Copyright (C) 2011-2012 Freescale Semiconductor, Inc.
  *
  * Configuration settings for the MX53-SMD Freescale board.
  *
@@ -59,13 +59,10 @@
  */
 
 #define CONFIG_CMDLINE_TAG		1	/* enable passing of ATAGs */
-#define CONFIG_SERIAL_TAG		1
 #define CONFIG_REVISION_TAG		1
 #define CONFIG_SETUP_MEMORY_TAGS	1
 #define CONFIG_INITRD_TAG		1
 
-/* IIM Unique ID offset on Bank0 */
-#define CONFIG_IIM_UNIQUE_ID_OFFSET	0x20
 /*
  * Size of malloc() pool
  */
@@ -97,8 +94,8 @@
 #define CONFIG_FASTBOOT_INTERFACE_STR	 "Android fastboot"
 #define CONFIG_FASTBOOT_SERIAL_NUM	"12345"
 #define CONFIG_FASTBOOT_SATA_NO		 0
-#define CONFIG_FASTBOOT_TRANSFER_BUF	0x78000000
-#define CONFIG_FASTBOOT_TRANSFER_BUF_SIZE 0x20000000 /* 512M byte */
+#define CONFIG_FASTBOOT_TRANSFER_BUF	0x80000000
+#define CONFIG_FASTBOOT_TRANSFER_BUF_SIZE 0x9400000 /* 148M byte */
 
 #define CONFIG_CMD_BOOTI
 #define CONFIG_ANDROID_RECOVERY
@@ -107,9 +104,12 @@
 #define CONFIG_MTD_PARTITIONS
 #define CONFIG_TIMESTAMP
 
-#define CONFIG_ANDROID_RECOVERY_BOOTARGS_MMC NULL
-#define CONFIG_ANDROID_RECOVERY_BOOTCMD_MMC \
-	"booti mmc1 recovery"
+#define CONFIG_ANDROID_RECOVERY_BOOTARGS_MMC \
+	"setenv bootargs ${bootargs} init=/init root=/dev/mmcblk0p4 rootfs=ext4 video=mxcdi1fb:RGB666,XGA ldb=di1 di1_primary"
+#define CONFIG_ANDROID_RECOVERY_BOOTCMD_MMC  \
+	"run bootargs_base bootargs_android_recovery; "	\
+	"mmc dev 1 0; "	\
+	"mmc read ${loadaddr} 0x800 0x2000;bootm"
 #define CONFIG_ANDROID_RECOVERY_CMD_FILE "/recovery/command"
 
 #define CONFIG_ANDROID_BOOT_PARTITION_MMC -1
@@ -330,7 +330,7 @@
 /* Monitor at beginning of flash */
 #define CONFIG_FSL_ENV_IN_MMC
 
-#define CONFIG_ENV_SECT_SIZE    (128 * 1024)
+#define CONFIG_ENV_SECT_SIZE    (8 * 1024)
 #define CONFIG_ENV_SIZE         CONFIG_ENV_SECT_SIZE
 
 #if defined(CONFIG_FSL_ENV_IN_NAND)

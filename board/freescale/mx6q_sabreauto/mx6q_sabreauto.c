@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Freescale Semiconductor, Inc.
+ * Copyright (C) 2010-2012 Freescale Semiconductor, Inc.
  *
  * See file CREDITS for list of people who contributed to this
  * project.
@@ -208,20 +208,23 @@ void board_mmu_init(void)
 }
 #endif
 
+#ifdef CONFIG_DWC_AHSATA
 
 #define ANATOP_PLL_LOCK                 0x80000000
 #define ANATOP_PLL_ENABLE_MASK          0x00002000
 #define ANATOP_PLL_BYPASS_MASK          0x00010000
+#define ANATOP_PLL_LOCK                 0x80000000
 #define ANATOP_PLL_PWDN_MASK            0x00001000
 #define ANATOP_PLL_HOLD_RING_OFF_MASK   0x00000800
 #define ANATOP_SATA_CLK_ENABLE_MASK     0x00100000
 
-#ifdef CONFIG_DWC_AHSATA
 /* Staggered Spin-up */
 #define	HOST_CAP_SSS			(1 << 27)
 /* host version register*/
 #define	HOST_VERSIONR			0xfc
 #define PORT_SATA_SR			0x128
+#define	PORT_PHY_CTL			0x178
+#define	PORT_PHY_CTL_PDDQ_LOC		0x100000
 
 int sata_initialize(void)
 {
@@ -229,6 +232,11 @@ int sata_initialize(void)
 	u32 iterations = 1000000;
 
 	if (sata_curr_device == -1) {
+		/* Make sure that the PDDQ mode is disabled. */
+		reg = readl(SATA_ARB_BASE_ADDR + PORT_PHY_CTL);
+		writel(reg & (~PORT_PHY_CTL_PDDQ_LOC),
+				SATA_ARB_BASE_ADDR + PORT_PHY_CTL);
+
 		/* Reset HBA */
 		writel(HOST_RESET, SATA_ARB_BASE_ADDR + HOST_CTL);
 
@@ -263,9 +271,8 @@ int sata_initialize(void)
 
 	return __sata_initialize();
 }
-#endif
 
-static int setup_sata(void)
+int setup_sata(void)
 {
 	u32 reg = 0;
 	s32 timeout = 100000;
@@ -309,8 +316,16 @@ static int setup_sata(void)
 	reg |= 0x59124c6;
 	writel(reg, IOMUXC_BASE_ADDR + 0x34);
 
+	if (sata_curr_device == -1) {
+		/* Enable PDDQ mode in default if there isn't sata boot */
+		reg = readl(SATA_ARB_BASE_ADDR + PORT_PHY_CTL);
+		writel(reg | PORT_PHY_CTL_PDDQ_LOC,
+				SATA_ARB_BASE_ADDR + PORT_PHY_CTL);
+	}
+
 	return 0;
 }
+#endif
 
 int dram_init(void)
 {
@@ -390,16 +405,32 @@ static void setup_i2c(unsigned int module_base)
 
 		if (mx6_board_is_reva()) /* GPIO_16 for I2C3_SDA */
 			mxc_iomux_v3_setup_pad(MX6Q_PAD_GPIO_16__I2C3_SDA);
-		else
+		else {
 			mxc_iomux_v3_setup_pad(MX6Q_PAD_EIM_D18__I2C3_SDA);
+			/* EIM_A24__GPIO_5_4 steer logic enable */
+			mxc_iomux_v3_setup_pad(MX6Q_PAD_EIM_A24__GPIO_5_4);
+			/* I2C steer reset */
+			mxc_iomux_v3_setup_pad(MX6Q_PAD_SD2_DAT0__GPIO_1_15);
+			gpio_direction_output(I2C_EXP_RST, 1);
+			/* Enable I2C2 SDA route path */
+			gpio_direction_output(I2C3_STEER, 1);
+		}
 #elif defined CONFIG_MX6DL
 		/* GPIO_3 for I2C3_SCL */
 		mxc_iomux_v3_setup_pad(MX6DL_PAD_GPIO_3__I2C3_SCL);
 
 		if (mx6_board_is_reva()) /* GPIO_16 for I2C3_SDA */
 			mxc_iomux_v3_setup_pad(MX6DL_PAD_GPIO_16__I2C3_SDA);
-		else
+		else {
 			mxc_iomux_v3_setup_pad(MX6DL_PAD_EIM_D18__I2C3_SDA);
+			/* EIM_A24__GPIO_5_4 steer logic enable */
+			mxc_iomux_v3_setup_pad(MX6DL_PAD_EIM_A24__GPIO_5_4);
+			/* I2C steer reset */
+			mxc_iomux_v3_setup_pad(MX6DL_PAD_SD2_DAT0__GPIO_1_15);
+			gpio_direction_output(I2C_EXP_RST, 1);
+			/* Enable I2C3 SDA route path */
+			gpio_direction_output(I2C3_STEER, 1);
+		}
 #endif
 		/* Enable i2c clock */
 		reg = readl(CCM_BASE_ADDR + CLKCTL_CCGR2);
@@ -500,6 +531,10 @@ void spi_io_init(struct imx_spi_dev_t *dev)
 		else if (dev->ss == 1)
 			mxc_iomux_v3_setup_pad(MX6DL_PAD_EIM_D19__ECSPI1_SS1);
 #endif
+		if (!mx6_board_is_reva()) {
+			/* Enable spi-nor route path */
+			gpio_set_value(I2C3_STEER, 0);
+		}
 		break;
 	case ECSPI2_BASE_ADDR:
 	case ECSPI3_BASE_ADDR:
@@ -607,6 +642,19 @@ struct fsl_esdhc_cfg usdhc_cfg[4] = {
 	{USDHC4_BASE_ADDR, 1, 1, 1, 0},
 };
 
+#ifdef CONFIG_DYNAMIC_MMC_DEVNO
+int get_mmc_env_devno(void)
+{
+	uint soc_sbmr = readl(SRC_BASE_ADDR + 0x4);
+
+	if (SD_BOOT == boot_dev || MMC_BOOT == boot_dev) {
+		/* BOOT_CFG2[3] and BOOT_CFG2[4] */
+		return (soc_sbmr & 0x00001800) >> 11;
+	} else
+		return -1;
+
+}
+#endif
 #ifdef CONFIG_CMD_WEIMNOR
 
 #if defined CONFIG_MX6Q
@@ -651,6 +699,7 @@ iomux_v3_cfg_t nor_pads[] = {
 	MX6Q_PAD_EIM_A21__WEIM_WEIM_A_21,
 	MX6Q_PAD_EIM_A22__WEIM_WEIM_A_22,
 	MX6Q_PAD_EIM_A23__WEIM_WEIM_A_23,
+	MX6Q_PAD_EIM_A24__WEIM_WEIM_A_24,
 	MX6Q_PAD_EIM_OE__WEIM_WEIM_OE,
 	MX6Q_PAD_EIM_RW__WEIM_WEIM_RW,
 	MX6Q_PAD_EIM_CS0__WEIM_WEIM_CS_0
@@ -697,6 +746,7 @@ iomux_v3_cfg_t nor_pads[] = {
 	MX6DL_PAD_EIM_A21__WEIM_WEIM_A_21,
 	MX6DL_PAD_EIM_A22__WEIM_WEIM_A_22,
 	MX6DL_PAD_EIM_A23__WEIM_WEIM_A_23,
+	MX6DL_PAD_EIM_A24__WEIM_WEIM_A_24,
 	MX6DL_PAD_EIM_OE__WEIM_WEIM_OE,
 	MX6DL_PAD_EIM_RW__WEIM_WEIM_RW,
 	MX6DL_PAD_EIM_CS0__WEIM_WEIM_CS_0
@@ -706,10 +756,10 @@ iomux_v3_cfg_t nor_pads[] = {
 static void weim_norflash_cs_setup(void)
 {
     writel(0x00000120, WEIM_BASE_ADDR + 0x090);
-    writel(0x00020181, WEIM_BASE_ADDR + 0x000);
+    writel(0x00620181, WEIM_BASE_ADDR + 0x000);
     writel(0x00000001, WEIM_BASE_ADDR + 0x004);
-    writel(0x0a020000, WEIM_BASE_ADDR + 0x008);
-    writel(0x0000c000, WEIM_BASE_ADDR + 0x00c);
+    writel(0x0f020000, WEIM_BASE_ADDR + 0x008);
+    writel(0x0000b000, WEIM_BASE_ADDR + 0x00c);
     writel(0x0804a240, WEIM_BASE_ADDR + 0x010);
 }
 
@@ -718,6 +768,11 @@ static void setup_nor(void)
 
 	mxc_iomux_v3_setup_multiple_pads(nor_pads,
 			ARRAY_SIZE(nor_pads));
+
+	if (!mx6_board_is_reva()) {
+		/* Enable weim-nor route path */
+		gpio_set_value(I2C3_STEER, 0);
+	}
 
 	weim_norflash_cs_setup();
 }
@@ -814,18 +869,6 @@ iomux_v3_cfg_t usdhc4_pads[] = {
 };
 #endif
 
-#define USDHC_PAD_CTRL_DEFAULT (PAD_CTL_PKE | PAD_CTL_PUE |		\
-		PAD_CTL_PUS_47K_UP  | PAD_CTL_SPEED_LOW |		\
-		PAD_CTL_DSE_80ohm   | PAD_CTL_SRE_FAST  | PAD_CTL_HYS)
-
-#define USDHC_PAD_CTRL_100MHZ (PAD_CTL_PKE | PAD_CTL_PUE |	\
-		PAD_CTL_PUS_47K_UP  | PAD_CTL_SPEED_MED |		\
-		PAD_CTL_DSE_40ohm   | PAD_CTL_SRE_FAST  | PAD_CTL_HYS)
-
-#define USDHC_PAD_CTRL_200MHZ (PAD_CTL_PKE | PAD_CTL_PUE |	\
-		PAD_CTL_PUS_47K_UP  | PAD_CTL_SPEED_HIGH |		\
-		PAD_CTL_DSE_40ohm   | PAD_CTL_SRE_FAST   | PAD_CTL_HYS)
-
 int usdhc_gpio_init(bd_t *bis)
 {
 	s32 status = 0;
@@ -860,57 +903,6 @@ int usdhc_gpio_init(bd_t *bis)
 	}
 
 	return status;
-}
-
-static void usdhc_switch_pad(iomux_v3_cfg_t *pad_list, unsigned count,
-	iomux_v3_cfg_t *new_pad_list, iomux_v3_cfg_t pad_val)
-{
-	u32 i;
-
-	for (i = 0; i < count; i++) {
-		new_pad_list[i] = pad_list[i] & (~MUX_PAD_CTRL_MASK);
-		new_pad_list[i] |= MUX_PAD_CTRL(pad_val);
-	}
-}
-
-int board_mmc_io_switch(u32 index, u32 clock)
-{
-	iomux_v3_cfg_t new_pads[14];
-	u32 count;
-	iomux_v3_cfg_t pad_ctrl = USDHC_PAD_CTRL_DEFAULT;
-
-	if (clock >= 200000000)
-		pad_ctrl = USDHC_PAD_CTRL_200MHZ;
-	else if (clock == 100000000)
-		pad_ctrl = USDHC_PAD_CTRL_100MHZ;
-
-	switch (index) {
-	case 0:
-		count = sizeof(usdhc1_pads) / sizeof(usdhc1_pads[0]);
-		usdhc_switch_pad(usdhc1_pads, count, new_pads, pad_ctrl);
-		break;
-	case 1:
-		count = sizeof(usdhc2_pads) / sizeof(usdhc2_pads[0]);
-		usdhc_switch_pad(usdhc2_pads, count, new_pads, pad_ctrl);
-		break;
-	case 2:
-		count = sizeof(usdhc3_pads) / sizeof(usdhc3_pads[0]);
-		usdhc_switch_pad(usdhc3_pads, count, new_pads, pad_ctrl);
-		break;
-	case 3:
-		count = sizeof(usdhc4_pads) / sizeof(usdhc4_pads[0]);
-		usdhc_switch_pad(usdhc4_pads, count, new_pads, pad_ctrl);
-		break;
-	default:
-		printf("Warning: you configured more USDHC controllers"
-			"(%d) then supported by the board (%d)\n",
-			index+1, CONFIG_SYS_FSL_USDHC_NUM);
-		return -1;
-	}
-
-	mxc_iomux_v3_setup_multiple_pads(new_pads, count);
-
-	return 0;
 }
 
 int board_mmc_init(bd_t *bis)
@@ -1024,18 +1016,6 @@ void setup_splash_image(void)
 }
 #endif
 
-#if defined CONFIG_MX6Q
-iomux_v3_cfg_t gpio_pads[] = {
-	MX6Q_PAD_EIM_A24__GPIO_5_4,
-	MX6Q_PAD_SD2_DAT0__GPIO_1_15,
-};
-#elif defined CONFIG_MX6DL
-iomux_v3_cfg_t gpio_pads[] = {
-	MX6DL_PAD_EIM_A24__GPIO_5_4,
-	MX6DL_PAD_SD2_DAT0__GPIO_1_15,
-};
-#endif
-
 int board_init(void)
 {
 	mxc_iomux_v3_init((void *)IOMUXC_BASE_ADDR);
@@ -1051,24 +1031,16 @@ int board_init(void)
 	setup_uart();
 
 #ifdef CONFIG_I2C_MXC
-	if (!mx6_board_is_reva()) {
-		mxc_iomux_v3_setup_multiple_pads(gpio_pads,
-			ARRAY_SIZE(gpio_pads));
-		gpio_direction_output(I2C_EXP_RST, 1);
-		gpio_direction_output(I2C3_STEER, 1);
-	}
 	setup_i2c(CONFIG_SYS_I2C_PORT);
 	/* Enable lvds power */
 	setup_lvds_poweron();
-	/* restore path for weim/spi nor */
-	if (!mx6_board_is_reva())
-		gpio_direction_output(I2C3_STEER, 0);
 #endif
 #ifdef CONFIG_CMD_WEIMNOR
 	setup_nor();
 #endif
-	if (cpu_is_mx6q())
-		setup_sata();
+#ifdef CONFIG_DWC_AHSATA
+	setup_sata();
+#endif
 
 #ifdef CONFIG_VIDEO_MX5
 	panel_info_init();
@@ -1215,7 +1187,7 @@ int checkboard(void)
 	default:
 		printf("unknown");
 	}
-	printf("]\n");
+	printf(" ]\n");
 
 	printf("Boot Device: ");
 	switch (get_boot_device()) {
@@ -1253,54 +1225,3 @@ int checkboard(void)
 	}
 	return 0;
 }
-
-#ifdef CONFIG_IMX_UDC
-#define SABREAUTO_MAX7310_1_BASE_ADDR	IMX_GPIO_NR(8, 0)
-#define SABREAUTO_MAX7310_2_BASE_ADDR	IMX_GPIO_NR(8, 8)
-#define SABREAUTO_MAX7310_3_BASE_ADDR	IMX_GPIO_NR(8, 16)
-
-#define SABREAUTO_IO_EXP_GPIO1(x)	(SABREAUTO_MAX7310_1_BASE_ADDR + (x))
-#define SABREAUTO_IO_EXP_GPIO2(x)	(SABREAUTO_MAX7310_2_BASE_ADDR + (x))
-#define SABREAUTO_IO_EXP_GPIO3(x)	(SABREAUTO_MAX7310_3_BASE_ADDR + (x))
-
-#define SABREAUTO_USB_HOST1_PWR		SABREAUTO_IO_EXP_GPIO2(7)
-#define SABREAUTO_USB_OTG_PWR		SABREAUTO_IO_EXP_GPIO3(1)
-
-void udc_pins_setting(void)
-{
-	mxc_iomux_v3_setup_pad(MX6X_IOMUX(PAD_ENET_RX_ER__ANATOP_USBOTG_ID));
-
-	/* USB_OTG_PWR = 0 */
-	gpio_direction_output(SABREAUTO_USB_OTG_PWR, 0);
-	/* USB_H1_POWER = 1 */
-	gpio_direction_output(SABREAUTO_USB_HOST1_PWR, 1);
-
-	mxc_iomux_set_gpr_register(1, 13, 1, 0);
-
-}
-#endif
-
-#ifdef CONFIG_ANDROID_RECOVERY
-
-#define GPIO_VOL_DN_KEY IMX_GPIO_NR(5, 14)
-
-int check_recovery_cmd_file(void)
-{
-	int button_pressed = 0;
-	int recovery_mode = 0;
-
-	recovery_mode = check_and_clean_recovery_flag();
-
-	/* Check Recovery Combo Button press or not. */
-	mxc_iomux_v3_setup_pad(MX6X_IOMUX(PAD_DISP0_DAT20__GPIO_5_14));
-
-	gpio_direction_input(GPIO_VOL_DN_KEY);
-
-	if (gpio_get_value(GPIO_VOL_DN_KEY) == 0) { /* VOL_DN key is low assert */
-		button_pressed = 1;
-		printf("Recovery key pressed\n");
-	}
-
-	return recovery_mode || button_pressed;
-}
-#endif

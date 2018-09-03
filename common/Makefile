@@ -135,6 +135,10 @@ ifdef CONFIG_PCI
 COBJS-$(CONFIG_CMD_PCI) += cmd_pci.o
 endif
 COBJS-y += cmd_pcmcia.o
+ifdef CONFIG_CMD_PUTS         
+COBJS-$(CONFIG_CMD_PUTS) += cmd_puts.o
+endif
+COBJS-$(CONFIG_CMD_SDMA) += cmd_sdma.o
 COBJS-$(CONFIG_CMD_PORTIO) += cmd_portio.o
 COBJS-$(CONFIG_CMD_REGINFO) += cmd_reginfo.o
 COBJS-$(CONFIG_CMD_REGUL) += cmd_regul.o

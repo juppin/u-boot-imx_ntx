@@ -1,6 +1,6 @@
 /*
  * Freescale system chip & board version define
- * Copyright (C) 2012-2013 Freescale Semiconductor, Inc.
+ * Copyright (C) 2012 Freescale Semiconductor, Inc.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -20,7 +20,7 @@
 #include <config.h>
 #include <common.h>
 #include <asm/io.h>
-#if defined(CONFIG_MX6Q) || defined(CONFIG_MX6DL) || defined(CONFIG_MX6SL)
+#if defined(CONFIG_MX6Q) || defined(CONFIG_MX6DL)
 #include <asm/arch/mx6.h>
 #endif
 
@@ -30,7 +30,7 @@
 
 unsigned int fsl_system_rev;
 
-#if defined(CONFIG_MX6Q) || defined(CONFIG_MX6DL) || defined(CONFIG_MX6SL)
+#if defined(CONFIG_MX6Q) || defined(CONFIG_MX6DL)
 /*
  * Set fsl_system_rev:
  * bit 0-7: Chip Revision ID
@@ -68,14 +68,8 @@ void fsl_set_system_rev(void)
 	 * | 31 - 20 | 19 - 12 | 11 - 8 | 7 - 0 |
 	 * | resverd | CHIP ID | BD REV | SI REV |
 	 */
+	u32 cpu_type = readl(ANATOP_BASE_ADDR + 0x260);
 	u32 board_type = 0;
-	u32 cpu_type = readl(ANATOP_BASE_ADDR + 0x280);
-
-	if ((cpu_type >> 16) == 0x60)
-		goto found;
-
-	cpu_type = readl(ANATOP_BASE_ADDR + 0x260);
-found:
 	/* Chip Silicon ID */
 	fsl_system_rev = ((cpu_type >> 16) & 0xFF) << 12;
 	/* Chip silicon major revision */
@@ -91,7 +85,6 @@ found:
 	 * 0x2 : Smart Device (SD)
 	 * 0x3 : Quick-Start Board (QSB)
 	 * 0x4 : SoloLite EVK (SL-EVK)
-     * 0x6 : HDMI Dongle
 	 *
 	 * bit 8-11: Board Revision ID
 	 * 0x0 : Unknown or latest revision
@@ -124,20 +117,8 @@ found:
 	}
 #endif
 }
-
-int cpu_is_mx6q()
-{
-	if (fsl_system_rev != NULL)
-		fsl_set_system_rev();
-	return (((fsl_system_rev & 0xff000)>>12) == 0x63);
-}
 #else
 void fsl_set_system_rev(void)
 {
-}
-
-int cpu_is_mx6q()
-{
-	return 0;
 }
 #endif

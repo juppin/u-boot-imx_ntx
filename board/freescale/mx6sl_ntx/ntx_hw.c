@@ -22,16 +22,6 @@ static const NTX_GPIO gt_ntx_gpio_home_key_gp3_24= {
 	2, // 1:input ; 0:output ; 2:btn .
 };
 
-static const NTX_GPIO gt_ntx_gpio_home_key_gp3_27= {
-	MX6SL_PAD_KEY_ROW1__GPIO_3_27_KEYPAD,  // pin pad/mux control  .
-	3, // gpio group .
-	27, // gpio number .
-	0, // key down value .
-	0, // not inited .
-	"[HOME]", // name .
-	2, // 1:input ; 0:output ; 2:btn .
-};
-
 
 static const NTX_GPIO gt_ntx_gpio_home_key= {
 	MX6SL_PAD_KEY_ROW0__GPIO_3_25,  // pin pad/mux control .
@@ -70,54 +60,10 @@ static const NTX_GPIO gt_ntx_gpio_menu_key= {
 	"[MENU]", // name .
 	2, // 1:input ; 0:output ; 2:btn .
 };
-static const NTX_GPIO gt_ntx_gpio_menu_key_gp3_25= {
-	MX6SL_PAD_KEY_ROW0__GPIO_3_25,  // pin pad/mux control  .
-	3, // gpio group .
-	25, // gpio number .
-	0, // key down value .
-	0, // not inited .
-	"[MENU]", // name .
-	2, // 1:input ; 0:output ; 2:btn .
-};
-static const NTX_GPIO gt_ntx_gpio_pgup_key_gp3_26= {
-	MX6SL_PAD_KEY_COL1__GPIO_3_26,  // pin pad/mux control  .
-	3, // gpio group .
-	26, // gpio number .
-	0, // key down value .
-	0, // not inited .
-	"[PGUP]", // name .
-	2, // 1:input ; 0:output ; 2:btn .
-};
-static const NTX_GPIO gt_ntx_gpio_left_key= {
-	MX6SL_PAD_KEY_ROW2__GPIO_3_29,  // pin pad/mux control  .
-	3, // gpio group .
-	29, // gpio number .
-	0, // key down value .
-	0, // not inited .
-	"[LEFT]", // name .
-	2, // 1:input ; 0:output ; 2:btn .
-};
-static const NTX_GPIO gt_ntx_gpio_pgdn_key_gp3_30= {
-	MX6SL_PAD_KEY_COL3__GPIO_3_30,  // pin pad/mux control  .
-	3, // gpio group .
-	30, // gpio number .
-	0, // key down value .
-	0, // not inited .
-	"[PGDN]", // name .
-	2, // 1:input ; 0:output ; 2:btn .
-};
-static const NTX_GPIO gt_ntx_gpio_right_key= {
-	MX6SL_PAD_KEY_ROW3__GPIO_3_31_KEYPAD,  // pin pad/mux control .
-	3, // gpio group .
-	31, // gpio number .
-	0, // default output value .
-	0, // not inited .
-	"[RIGHT]", // name .
-	2, // 1:input ; 0:output ; 2:btn .
-};
+
 
 static const NTX_GPIO gt_ntx_gpio_fl_key_gp3_26= {
-	MX6SL_PAD_KEY_COL1__GPIO_3_26_KEYPAD,  // pin pad/mux control  .
+	MX6SL_PAD_KEY_COL1__GPIO_3_26,  // pin pad/mux control  .
 	3, // gpio group .
 	26, // gpio number .
 	0, // key down value .
@@ -126,99 +72,10 @@ static const NTX_GPIO gt_ntx_gpio_fl_key_gp3_26= {
 	2, // 1:input ; 0:output ; 2:btn .
 };
 
-static const NTX_GPIO gt_ntx_gpio_r1_key= {
-	MX6SL_PAD_KEY_COL3__GPIO_3_30_KEYPAD,  // pin pad/mux control  .
-	3, // gpio group .
-	30, // gpio number .
-	0, // key down value .
-	0, // not inited .
-	"[R1]", // name .
-	2, // 1:input ; 0:output ; 2:btn .
-};
-
-static const NTX_GPIO gt_ntx_gpio_r1_key_gp3_26= {
-	MX6SL_PAD_KEY_COL1__GPIO_3_26_KEYPAD,  // pin pad/mux control  .
-	3, // gpio group .
-	26, // gpio number .
-	0, // key down value .
-	0, // not inited .
-	"[R1]", // name .
-	2, // 1:input ; 0:output ; 2:btn .
-};
-
-static const NTX_GPIO gt_ntx_gpio_l1_key= {
-	MX6SL_PAD_KEY_COL4__GPIO_4_0_KEYPAD,  // pin pad/mux control  .
-	4, // gpio group .
-	0, // gpio number .
-	0, // key down value .
-	0, // not inited .
-	"[L1]", // name .
-	2, // 1:input ; 0:output ; 2:btn .
-};
-
-static const NTX_GPIO gt_ntx_gpio_l1_key_gp3_30= {
-	MX6SL_PAD_KEY_COL3__GPIO_3_30_KEYPAD,  // pin pad/mux control  .
-	3, // gpio group .
-	30, // gpio number .
-	0, // key down value .
-	0, // not inited .
-	"[L1]", // name .
-	2, // 1:input ; 0:output ; 2:btn .
-};
-
-static const NTX_GPIO gt_ntx_gpio_r2_key= {
-	MX6SL_PAD_KEY_ROW4__GPIO_4_1_KEYPAD,  // pin pad/mux control  .
-	4, // gpio group .
-	1, // gpio number .
-	0, // key down value .
-	0, // not inited .
-	"[R2]", // name .
-	2, // 1:input ; 0:output ; 2:btn .
-};
-
-static const NTX_GPIO gt_ntx_gpio_r2_key_gp4_0= {
-	MX6SL_PAD_KEY_COL4__GPIO_4_0_KEYPAD,  // pin pad/mux control  .
-	4, // gpio group .
-	0, // gpio number .
-	0, // key down value .
-	0, // not inited .
-	"[R2]", // name .
-	2, // 1:input ; 0:output ; 2:btn .
-};
-
-static const NTX_GPIO gt_ntx_gpio_l2_key= {
-	MX6SL_PAD_KEY_ROW5__GPIO_4_3_KEYPAD,  // pin pad/mux control  .
-	4, // gpio group .
-	3, // gpio number .
-	0, // key down value .
-	0, // not inited .
-	"[L2]", // name .
-	2, // 1:input ; 0:output ; 2:btn .
-};
-
-static const NTX_GPIO gt_ntx_gpio_l2_key_gp4_2= {
-	MX6SL_PAD_KEY_COL5__GPIO_4_2_KEYPAD,  // pin pad/mux control  .
-	4, // gpio group .
-	2, // gpio number .
-	0, // key down value .
-	0, // not inited .
-	"[L2]", // name .
-	2, // 1:input ; 0:output ; 2:btn .
-};
-
 static const NTX_GPIO gt_ntx_gpio_hallsensor_key_gp5_12= {
 	MX6SL_PAD_SD1_DAT4__GPIO_5_12,  // pin pad/mux control .
 	5, // gpio group .
 	12, // gpio number .
-	0, // key down value .
-	0, // not inited .
-	"[HALL]", // name .
-	2, // 1:input ; 0:output ; 2:btn .
-};
-static const NTX_GPIO gt_ntx_gpio_hallsensor_key_gp4_23= {
-	MX6SL_PAD_FEC_MDC__GPIO_4_23,  // pin pad/mux control .
-	4, // gpio group .
-	23, // gpio number .
 	0, // key down value .
 	0, // not inited .
 	"[HALL]", // name .
@@ -235,39 +92,10 @@ static const NTX_GPIO gt_ntx_gpio_hallsensor_key= {
 	2, // 1:input ; 0:output ; 2:btn .
 };
 
-static const NTX_GPIO gt_ntx_gpio_earphone_detector_sw= {
-	MX6SL_PAD_KEY_COL0__GPIO_3_24,  // pin pad/mux control .
-	3, // gpio group .
-	24, // gpio number .
-	0, // key down value .
-	0, // not inited .
-	"[HPSW]", // name .
-	2, // 1:input ; 0:output ; 2:btn .
-};
-static const NTX_GPIO gt_ntx_gpio_tp_sw= {
-	MX6SL_PAD_KEY_COL0__GPIO_3_24,  // pin pad/mux control .
-	3, // gpio group .
-	24, // gpio number .
-	0, // key down value .
-	0, // not inited .
-	"[TPSW]", // name .
-	2, // 1:input ; 0:output ; 2:btn .
-};
-
-
 static const NTX_GPIO gt_ntx_gpio_power_key_gp5_8= {
 	MX6SL_PAD_SD1_DAT1__GPIO_5_8,  // pin pad/mux control .
 	5, // gpio group .
 	8, // gpio number .
-	0, // key down value .
-	0, // not inited .
-	"[POWER]", // name .
-	2, // 1:input ; 0:output ; 2:btn .
-};
-static const NTX_GPIO gt_ntx_gpio_power_key_gp4_25= {
-	MX6SL_PAD_FEC_CRS_DV__GPIO_4_25,  // pin pad/mux control .
-	4, // gpio group .
-	25, // gpio number .
 	0, // key down value .
 	0, // not inited .
 	"[POWER]", // name .
@@ -294,8 +122,8 @@ static const NTX_GPIO gt_ntx_gpio_ACIN= {
 	"ACIN", // name .
 	1, // 1:input ; 0:output ; 2:btn .
 };
-const NTX_GPIO gt_ntx_gpio_USBID= {
-	MX6SL_PAD_SD1_DAT5__GPIO_5_9_PULLHIGH,  // pin pad/mux control .
+static const NTX_GPIO gt_ntx_gpio_USBID= {
+	MX6SL_PAD_SD1_DAT5__GPIO_5_9_FLOAT,  // pin pad/mux control .
 	5, // gpio group .
 	9, // gpio number .
 	0, // NC .
@@ -311,15 +139,6 @@ static const NTX_GPIO gt_ntx_gpio_esdin= {
 	0, // NC .
 	0, // not inited .
 	"ESDIN", // name .
-	1, // 1:input ; 0:output ; 2:btn .
-};
-static const NTX_GPIO gt_ntx_gpio_chg_4_20= {
-	MX6SL_PAD_FEC_MDIO__GPIO_4_20,  // pin pad/mux control .
-	4, // gpio group .
-	20, // gpio number .
-	0, // NC .
-	0, // not inited .
-	"CHG", // name .
 	1, // 1:input ; 0:output ; 2:btn .
 };
 
@@ -428,15 +247,6 @@ static NTX_GPIO gt_ntx_gpio_ON_LED_gp5_13= {
 	"ON_LED", // name .
 	0, // 1:input ; 0:output ; 2:btn .
 };
-static NTX_GPIO gt_ntx_gpio_ACTION_LED_gp5_10= {
-	MX6SL_PAD_SD1_DAT7__GPIO_5_10,  // pin pad/mux control .
-	5, // gpio group .
-	10, // gpio number .
-	0, // default output value .
-	0, // not inited .
-	"ACTION_LED", // name .
-	0, // 1:input ; 0:output ; 2:btn .
-};
 
 static const NTX_GPIO gt_ntx_gpio_ACTION_LED= {
 	MX6SL_PAD_FEC_TX_EN__GPIO_4_22,  // pin pad/mux control .
@@ -456,25 +266,6 @@ static const NTX_GPIO gt_ntx_gpio_ACTION_LED_gp5_7= {
 	"ACTION_LED", // name .
 	0, // 1:input ; 0:output ; 2:btn .
 };
-static const NTX_GPIO gt_ntx_gpio_ACTION_LED_gp5_9= {
-	MX6SL_PAD_SD1_DAT5__GPIO_5_9,  // pin pad/mux control .
-	5, // gpio group .
-	9, // gpio number .
-	0, // default output value .
-	0, // not inited .
-	"ACTION_LED", // name .
-	0, // 1:input ; 0:output ; 2:btn .
-};
-static const NTX_GPIO gt_ntx_gpio_ACTION_LED_gp4_22= {
-	MX6SL_PAD_FEC_TX_EN__GPIO_4_22,  // pin pad/mux control .
-	4, // gpio group .
-	22, // gpio number .
-	0, // default output value .
-	0, // not inited .
-	"ACTION_LED", // name .
-	0, // 1:input ; 0:output ; 2:btn .
-};
-
 static const NTX_GPIO gt_ntx_gpio_Charge_LED= {
 	MX6SL_PAD_FEC_TXD1__GPIO_4_16,  // pin pad/mux control .
 	4, // gpio group .
@@ -497,24 +288,6 @@ static const NTX_GPIO gt_ntx_gpio_Charge_LED_gp5_10= {
 	MX6SL_PAD_SD1_DAT7__GPIO_5_10,  // pin pad/mux control .
 	5, // gpio group .
 	10, // gpio number .
-	0, // default output value .
-	0, // not inited .
-	"Charge_LED", // name .
-	0, // 1:input ; 0:output ; 2:btn .
-};
-static const NTX_GPIO gt_ntx_gpio_Charge_LED_gp5_9= {
-	MX6SL_PAD_SD1_DAT5__GPIO_5_9,  // pin pad/mux control .
-	5, // gpio group .
-	9, // gpio number .
-	0, // default output value .
-	0, // not inited .
-	"Charge_LED", // name .
-	0, // 1:input ; 0:output ; 2:btn .
-};
-static const NTX_GPIO gt_ntx_gpio_Charge_LED_gp4_16= {
-	MX6SL_PAD_FEC_TXD1__GPIO_4_16,  // pin pad/mux control .
-	4, // gpio group .
-	16, // gpio number .
 	0, // default output value .
 	0, // not inited .
 	"Charge_LED", // name .
@@ -553,15 +326,6 @@ static const NTX_GPIO gt_ntx_gpio_IR_RST= {
 	MX6SL_PAD_SD1_DAT5__GPIO_5_9,  // pin pad/mux control .
 	5, // gpio group .
 	9, // gpio number .
-	0, // default output value .
-	0, // not inited .
-	"IR_RST", // name .
-	0, // 1:input ; 0:output ; 2:btn .
-};
-static const NTX_GPIO gt_ntx_gpio_IR_RST_4_17= {
-	MX6SL_PAD_FEC_RXD0__GPIO_4_17,  // pin pad/mux control .
-	4, // gpio group .
-	17, // gpio number .
 	0, // default output value .
 	0, // not inited .
 	"IR_RST", // name .
@@ -719,13 +483,11 @@ static const NTX_GPIO gt_ntx_gpio_OTG_FB_key= {
 	2, // 1:input ; 0:output ; 2:btn .
 };
 
-
-
 #endif //]CONFIG_MX6SL
-NTX_GPIO * ntx_gpio_keysA[NTX_GPIO_KEYS] = {
+NTX_GPIO * ntx_gpio_keysA[] = {
 #ifdef _MX6SL_//[
-//	&gt_ntx_gpio_home_key,
-//	&gt_ntx_gpio_fl_key,
+	&gt_ntx_gpio_home_key,
+	&gt_ntx_gpio_fl_key,
 //	&gt_ntx_gpio_hallsensor_key,
 	0,
 #elif defined (_MX6Q_)
@@ -734,15 +496,8 @@ NTX_GPIO * ntx_gpio_keysA[NTX_GPIO_KEYS] = {
 #endif //]_MX6SL_
 };
 
-//int gi_ntx_gpio_keys=sizeof(ntx_gpio_keysA)/sizeof(ntx_gpio_keysA[0]);
-int gi_ntx_gpio_keys=0;
+int gi_ntx_gpio_keys=sizeof(ntx_gpio_keysA)/sizeof(ntx_gpio_keysA[0]);
 
-NTX_GPIO *gptNtxGpioKey_Home,*gptNtxGpioKey_FL,*gptNtxGpioKey_Power;
-NTX_GPIO *gptNtxGpioKey_Menu,*gptNtxGpioKey_Return,*gptNtxGpioSW_HallSensor;
-NTX_GPIO *gptNtxGpioKey_Left,*gptNtxGpioKey_Right;
-NTX_GPIO *gptNtxGpioKey_earphone_detector,*gptNtxGpioKey_Right;
-NTX_GPIO *gptNtxGpioKey_TPSW,*gptNtxGpioKey_PGUP,*gptNtxGpioKey_PGDN;
-NTX_GPIO *gptNtxGpioKey_R1,*gptNtxGpioKey_R2,*gptNtxGpioKey_L1,*gptNtxGpioKey_L2;
 
 void wifi_3v3(int iON) 
 {
@@ -763,43 +518,28 @@ void _led_R(int iIsTurnON)
 		// E60Q0X/E60Q1X .
 		ntx_gpio_set_value(&gt_ntx_gpio_Charge_LED,iIsTurnON);
 	}
-	else if(47==gptNtxHwCfg->m_val.bPCB || 54==gptNtxHwCfg->m_val.bPCB) {
-		// ED0Q02 . ED0Q12
+	else if(47==gptNtxHwCfg->m_val.bPCB) {
+		// ED0Q02 .
 	}
 	else if(40==gptNtxHwCfg->m_val.bPCB) {
 		// E60Q52 .
 		ntx_gpio_set_value(&gt_ntx_gpio_Charge_LED_gp5_15,iIsTurnON?0:1);
 	}
-	else if(55==gptNtxHwCfg->m_val.bPCB||67==gptNtxHwCfg->m_val.bPCB) {
-		// E70Q02/E70Q12 .
-		ntx_gpio_set_value(&gt_ntx_gpio_Charge_LED_gp5_9,iIsTurnON?0:1);
-	}
 	else {
 		if(5==gptNtxHwCfg->m_val.bLed||6==gptNtxHwCfg->m_val.bLed||7==gptNtxHwCfg->m_val.bLed||8==gptNtxHwCfg->m_val.bLed) {
 			// Green only/White only/No Lights/White and Home LED .
 		}
-		else if(NTXHWCFG_TST_FLAG(gptNtxHwCfg->m_val.bPCB_Flags2,0)) {
-			// eMMC@SD1 , IOs@SD4 .
-			ntx_gpio_set_value(&gt_ntx_gpio_Charge_LED_gp4_16,iIsTurnON?0:1);
+		else
+		if(1==gptNtxHwCfg->m_val.bLed) {
+			// RGB type LED .
+			ntx_gpio_set_value(&gt_ntx_gpio_Charge_LED_gp5_10,iIsTurnON?0:1);
 		}
 		else {
-			// eMMC@SD4 , IOs@SD1 .
-
-			if(1==gptNtxHwCfg->m_val.bLed||2==gptNtxHwCfg->m_val.bLed) {
-				// RGB/RG type LED .
-				ntx_gpio_set_value(&gt_ntx_gpio_Charge_LED_gp5_10,iIsTurnON?0:1);
-			}
-			else {
-				ntx_gpio_set_value(&gt_ntx_gpio_Charge_LED_gp5_15,iIsTurnON?0:1);
-			}
-
+			ntx_gpio_set_value(&gt_ntx_gpio_Charge_LED_gp5_15,iIsTurnON?0:1);
 		}
 	}
 #endif //]_MX6SL_
 }
-/*
- * For models without RGB LED, default goes _led_G()
- */
 void _led_G(int iIsTurnON)
 {
 
@@ -821,11 +561,8 @@ void _led_G(int iIsTurnON)
 		// E60Q0X/E60Q1X .
 		ntx_gpio_set_value(&gt_ntx_gpio_ACTION_LED,iIsTurnON);
 	}
-	else if(50==gptNtxHwCfg->m_val.bPCB||46==gptNtxHwCfg->m_val.bPCB||
-		58==gptNtxHwCfg->m_val.bPCB||42==gptNtxHwCfg->m_val.bPCB||
-		61==gptNtxHwCfg->m_val.bPCB)
-	{
-		// E60QFX/E60Q9X/E60QJX/E60Q6X/E60QKX .
+	else if(50==gptNtxHwCfg->m_val.bPCB||46==gptNtxHwCfg->m_val.bPCB) {
+		// E60QFX/E60Q9X .
 		if(iIsTurnON) {
 
 			gt_ntx_gpio_ON_LED_gp5_13.iIsInited = 0;
@@ -847,25 +584,7 @@ void _led_G(int iIsTurnON)
 		}
 	}
 	else {
-		if(6==gptNtxHwCfg->m_val.bLed) {
-			// no lights .
-		}
-		else {
-			if(NTXHWCFG_TST_FLAG(gptNtxHwCfg->m_val.bPCB_Flags2,0)) {
-				// eMMC@SD1 , IOs@SD4 .
-				ntx_gpio_set_value(&gt_ntx_gpio_ACTION_LED_gp4_22,iIsTurnON?0:1);
-			}
-			else {
-				// eMMC@SD4 , IOs@SD1 .
-				if(70==gptNtxHwCfg->m_val.bPCB) {
-					// E70Q2X .
-					ntx_gpio_set_value(&gt_ntx_gpio_ACTION_LED_gp5_9,iIsTurnON?0:1);
-				}
-				else {
-					ntx_gpio_set_value(&gt_ntx_gpio_ACTION_LED_gp5_7,iIsTurnON?0:1);
-				}
-			}
-		}
+		ntx_gpio_set_value(&gt_ntx_gpio_ACTION_LED_gp5_7,iIsTurnON?0:1);
 	}
 #endif //]_MX6SL_
 }
@@ -875,22 +594,13 @@ void _led_B(int iIsTurnON)
 	if(31==gptNtxHwCfg->m_val.bPCB||32==gptNtxHwCfg->m_val.bPCB) {
 		ntx_gpio_set_value(&gt_ntx_gpio_ON_LED,iIsTurnON);
 	}
-	else if(47==gptNtxHwCfg->m_val.bPCB || 54==gptNtxHwCfg->m_val.bPCB) {
-		// ED0Q02 . ED0Q12
-	}
-	else if(55==gptNtxHwCfg->m_val.bPCB || 67==gptNtxHwCfg->m_val.bPCB) {
-		// E70Q02/E70Q1X .
-		ntx_gpio_set_value(&gt_ntx_gpio_ACTION_LED_gp5_10,iIsTurnON?0:1);
+	else if(47==gptNtxHwCfg->m_val.bPCB) {
+		// ED0Q02 .
 	}
 	else {
 		if(1==gptNtxHwCfg->m_val.bLed) {
 			// RGB type LED .
-			if(NTXHWCFG_TST_FLAG(gptNtxHwCfg->m_val.bPCB_Flags2,0)) {
-				// eMMC@SD1 , IOs@SD4 .
-			}
-			else {
-				ntx_gpio_set_value(&gt_ntx_gpio_ON_LED_gp5_13,iIsTurnON?0:1);
-			}
+			ntx_gpio_set_value(&gt_ntx_gpio_ON_LED_gp5_13,iIsTurnON?0:1);
 		}
 	}
 #endif //]_MX6SL_
@@ -898,7 +608,6 @@ void _led_B(int iIsTurnON)
 
 void _set_ISD_3V3_ON(int value)
 {
-
 #ifdef _MX6SL_//[
 	ntx_gpio_set_value(&gt_ntx_gpio_ISD_3V3_ON, value);
 #endif //]_MX6SL_
@@ -914,10 +623,7 @@ void _set_ESD_3V3_ON(int value)
 void _set_TP_3V3_ON(int value)
 {
 #ifdef _MX6SL_//[
-	if(1!=gptNtxHwCfg->m_val.bPMIC) {
-		// PMIC not RC5T619
-		ntx_gpio_set_value(&gt_ntx_gpio_TP_3V3_ON, value);
-	}
+	ntx_gpio_set_value(&gt_ntx_gpio_TP_3V3_ON, value);
 #endif //]_MX6SL_
 }
 void _set_TP_RST(int value)
@@ -925,20 +631,11 @@ void _set_TP_RST(int value)
 #ifdef _MX6SL_//[
 	if(4==gptNtxHwCfg->m_val.bTouchType) {
 		// IR touch type ...
-		if(NTXHWCFG_TST_FLAG(gptNtxHwCfg->m_val.bPCB_Flags2,0)) {
-			ntx_gpio_set_value(&gt_ntx_gpio_IR_RST_4_17, value);
-		}
-		else {
-			ntx_gpio_set_value(&gt_ntx_gpio_IR_RST, value);
-		}
+		ntx_gpio_set_value(&gt_ntx_gpio_IR_RST, value);
 	}
 	else if (3==gptNtxHwCfg->m_val.bTouchType) {
 		// C touch type ...
-		if(NTXHWCFG_TST_FLAG(gptNtxHwCfg->m_val.bPCB_Flags2,0)) {
-		}
-		else {
-			ntx_gpio_set_value(&gt_ntx_gpio_CT_RST, value);
-		}
+		ntx_gpio_set_value(&gt_ntx_gpio_CT_RST, value);
 	}
 #endif //]_MX6SL_
 
@@ -1085,7 +782,20 @@ int _get_pcba_id (void)
 int _power_key_status (void)
 {
 	int iRet;
-	iRet=ntx_gpio_key_is_down(gptNtxGpioKey_Power);
+
+#ifdef _MX6SL_
+	if (31==gptNtxHwCfg->m_val.bPCB||32==gptNtxHwCfg->m_val.bPCB) {
+		// E60Q1X/E60Q0X .
+		iRet=ntx_gpio_key_is_down(&gt_ntx_gpio_power_key);
+	}
+	else {
+		iRet=ntx_gpio_key_is_down(&gt_ntx_gpio_power_key_gp5_8);
+	}
+#elif defined (_MX6Q_) 
+	iRet=ntx_gpio_key_is_down(&gt_ntx_gpio_power_key);
+#else 
+#error "Platform error !"
+#endif
 	return iRet;
 }
 
@@ -1104,14 +814,21 @@ int _hallsensor_status (void)
 #if defined (_MX6Q_) //[
 #else //][!
 	if(gptNtxHwCfg&&0!=gptNtxHwCfg->m_val.bHallSensor) {
-		// E60Q1X/E60Q0X .
-		return ntx_gpio_key_is_down(gptNtxGpioSW_HallSensor);
+		
+		//return 0;
+		if (31==gptNtxHwCfg->m_val.bPCB||32==gptNtxHwCfg->m_val.bPCB) {
+			// E60Q1X/E60Q0X .
+			return ntx_gpio_key_is_down(&gt_ntx_gpio_hallsensor_key);
+		}
+		else {
+			return ntx_gpio_key_is_down(&gt_ntx_gpio_hallsensor_key_gp5_12);
+		}
 	}
 	else {
 		return -1;
 	}
+#endif //]
 	return 0;
-#endif//] _MX6Q_
 }
 
 int ntx_gpio_key_is_fastboot_down(void)
@@ -1119,17 +836,11 @@ int ntx_gpio_key_is_fastboot_down(void)
 #ifdef _MX6Q_ //[
 	return ntx_gpio_key_is_down(&gt_ntx_gpio_OTG_FB_key);
 #elif defined(_MX6SL_)
-	if( 36==gptNtxHwCfg->m_val.bPCB || 40==gptNtxHwCfg->m_val.bPCB|| 
-			50==gptNtxHwCfg->m_val.bPCB || 
-			16==gptNtxHwCfg->m_val.bKeyPad || 18==gptNtxHwCfg->m_val.bKeyPad ||
-			11==gptNtxHwCfg->m_val.bKeyPad )
+	if(36==gptNtxHwCfg->m_val.bPCB || 40==gptNtxHwCfg->m_val.bPCB|| 
+			50==gptNtxHwCfg->m_val.bPCB) 
 	{
-		// Q30/Q50/QF0/QG0/Keypad type: HOMEPAD/FL_Key .
+		// Q30/Q50/QF0 .
 		return ntx_gpio_key_is_fl_down();
-	}
-	else if(23==gptNtxHwCfg->m_val.bKeyPad) {
-		// TP+PGUP+PGDN .
-		return ntx_gpio_key_is_pgdn_down();
 	}
 	else {
 		return ntx_gpio_key_is_home_down();
@@ -1141,52 +852,41 @@ int ntx_gpio_key_is_fastboot_down(void)
 int ntx_gpio_key_is_home_down(void)
 {
 #ifdef _MX6SL_//[
-	if(gptNtxGpioKey_Home) {
-		return ntx_gpio_key_is_down(gptNtxGpioKey_Home);
+	int iChk;
+	if(12==gptNtxHwCfg->m_val.bKeyPad) {
+		// model without keypad .
+		return 0;
+	}
+	if (31==gptNtxHwCfg->m_val.bPCB||
+			32==gptNtxHwCfg->m_val.bPCB||
+			47==gptNtxHwCfg->m_val.bPCB||
+			50==gptNtxHwCfg->m_val.bPCB) 
+	{
+		// E60Q1X/E60Q0X/ED0Q0X/E60QFX .
+		return ntx_gpio_key_is_down(&gt_ntx_gpio_home_key);
+	}
+	else {
+		return ntx_gpio_key_is_down(&gt_ntx_gpio_home_key_gp3_24);
 	}
 #endif //]_MX6SL_
 
-	return 0;
-}
-
-int ntx_gpio_key_is_pgup_down(void)
-{
-#ifdef _MX6SL_//[
-	if(gptNtxGpioKey_PGUP) {
-		return ntx_gpio_key_is_down(gptNtxGpioKey_PGUP);
-	}
-#endif //]_MX6SL_
-
-	return 0;
-}
-int ntx_gpio_key_is_pgdn_down(void)
-{
-#ifdef _MX6SL_//[
-	if(gptNtxGpioKey_PGDN) {
-		return ntx_gpio_key_is_down(gptNtxGpioKey_PGDN);
-	}
-#endif //]_MX6SL_
-
-	return 0;
-}
-
-
-int ntx_gpio_key_is_menu_down(void)
-{
-
-#ifdef _MX6SL_//[
-	if(gptNtxGpioKey_Menu) {
-		return ntx_gpio_key_is_down(gptNtxGpioKey_Menu);
-	}
-#endif //]_MX6SL_
 	return 0;
 }
 
 int ntx_gpio_key_is_fl_down(void)
 {
 #ifdef _MX6SL_//[
-	if(gptNtxGpioKey_FL) {
-		return ntx_gpio_key_is_down(gptNtxGpioKey_FL);
+	int iChk;
+	if(12==gptNtxHwCfg->m_val.bKeyPad||17==gptNtxHwCfg->m_val.bKeyPad||18==gptNtxHwCfg->m_val.bKeyPad) {
+		// Keypad is NO_Key || RETURN+HOME+MENU || HOMEPAD
+		return 0;
+	}
+	if (31==gptNtxHwCfg->m_val.bPCB||32==gptNtxHwCfg->m_val.bPCB) {
+		// E60Q1X/E60Q0X .
+		return ntx_gpio_key_is_down(&gt_ntx_gpio_fl_key);
+	}
+	else {
+		return ntx_gpio_key_is_down(&gt_ntx_gpio_fl_key_gp3_26);
 	}
 #endif //]
 	return 0;
@@ -1362,42 +1062,25 @@ int RC5T619_write_reg(unsigned char bRegAddr,unsigned char bRegWrVal)
 
 int RC5T619_set_charger_params(int iChargerType)
 {
-	unsigned char val;
 	if(1!=gptNtxHwCfg->m_val.bPMIC) {
 		//printf("%s():skipped ,RC5T619 disabled by hwconfig",__FUNCTION__);
 		return -3;
 	}
 
-	RC5T619_read_reg (0xBD, &val);
-	if (0 == (val & 0xC0))
-		return 0;
-
 	switch (iChargerType) {
 	default:
 	case USB_CHARGER_SDP:
-		{
-			int retry_cnt = 10;
-			unsigned char ilim=8;		// set ILIM 900mA
-
-			if (49==gptNtxHwCfg->m_val.bPCB||69==gptNtxHwCfg->m_val.bPCB)
-				ilim = 5;	// set ILIM 600mA for E60QDx, E60QQx
-			RC5T619_write_reg (0xB6, ilim);	// REGISET1 , set ILIM_ADP
-			RC5T619_write_reg (0xB8, 0x04);	// CHGISET , set ICHG 500mA
-			RC5T619_write_reg (0xB7, (0xE0|ilim));	// REGISET2 , set ILIM_USB
-			do {
-				RC5T619_write_reg (0xB7, (0xE0|ilim));	// REGISET2 , set ILIM_USB
-				RC5T619_read_reg (0xB7, &val);
-				if (ilim != (val&0x0F))
-					printf ("REGISET2 val %02X\n",val);
-			} while ((val != (val&0x0F)) && (--retry_cnt));
-		}
+		//printf ("%s : set 500mA for SDP\n",__func__);
+		RC5T619_write_reg (0xB6, 0x05);	// REGISET1 , set ILIM_ADP 600mA
+		RC5T619_write_reg (0xB7, 0xC5);	// REGISET2 , set ILIM_USB 600mA
+		RC5T619_write_reg (0xB8, 0x04);	// CHGISET , set ICHG 500mA
 		break;
 	case USB_CHARGER_CDP:
 	case USB_CHARGER_DCP:
 		//printf ("%s : set 900mA for DCP/CDP \n",__func__);
-		RC5T619_write_reg (0xB6, 0x09);	// REGISET1 , set ILIM_ADP 1000mA
-		RC5T619_write_reg (0xB7, 0x29);	// REGISET2 , set ILIM_USB 1000mA
-		RC5T619_write_reg (0xB8, 0x07);	// CHGISET , set ICHG 800mA
+		RC5T619_write_reg (0xB6, 0x08);	// REGISET1 , set ILIM_ADP 900mA
+		RC5T619_write_reg (0xB7, 0x08);	// REGISET2 , set ILIM_USB 900mA
+		RC5T619_write_reg (0xB8, 0x06);	// CHGISET , set ICHG 700mA
 		break;
 	}
 	return 0;
@@ -1423,21 +1106,6 @@ int RC5T619_charger_redetect(void)
 		return -1;
 	}
 
-	return iRet;
-}
-
-int RC5T619_disable_NOE(void)
-{
-	int iRet=0;
-	int iChk;
-
-	iChk=RC5T619_write_reg(0x11, 8);	// disable N_OE
-	printf("%s():",__FUNCTION__);
-	if(iChk<0) {
-		printf("failed\n");
-		return -1;
-	}
-	printf(" done\n");
 	return iRet;
 }
 
@@ -1555,7 +1223,7 @@ int ntx_detect_usb_plugin(int iIsDetectChargerType)
 	}
 
 	if(49==gptNtxHwCfg->m_val.bPCB && gptNtxHwCfg->m_val.bPCB_REV>=0x20) {
-		// E60QDXA2
+		// E60QDXA2 
 		// detect the usb id pin .
 		if(!ntx_gpio_get_value(&gt_ntx_gpio_USBID)) {
 			iRet |= USB_CHARGER_OTG;
@@ -1582,13 +1250,11 @@ void EPDPMIC_power_on(int iIsPowerON)
 		ntx_gpio_set_value(&gt_ntx_gpio_EPDPMIC_VIN,0);
 	}
 #endif ///]_MX6Q_
-
 }
 void EPDPMIC_vcom_onoff(int iIsON)
 {
 #ifdef _MX6Q_//[
 #else //][!_MX6Q_
-
 	if(iIsON) {
 		ntx_gpio_set_value(&gt_ntx_gpio_EPDPMIC_VCOM,1);
 	}
@@ -1676,255 +1342,21 @@ void ntx_hw_early_init(void)
 	
 	udc_init();
 
+	if(3==gptNtxHwCfg->m_val.bUIConfig) {
+		// MFG mode .
+		RC5T619_set_charger_params(USB_CHARGER_CDP);
+	}
+	else {
+		RC5T619_set_charger_params(USB_CHARGER_SDP);
+	}
+
 	RC5T619_enable_watchdog(0);
 
-	//_led_R(0);
-	//_led_G(0);
-	//_led_B(0);
+	_led_R(0);
+	_led_G(0);
+	_led_B(0);
 }
 
-static void ntx_keys_setup(void)
-{
-#ifdef _MX6SL_//[
-	// assigns power key .
-	if (31==gptNtxHwCfg->m_val.bPCB||32==gptNtxHwCfg->m_val.bPCB) {
-		gptNtxGpioKey_Power = &gt_ntx_gpio_power_key;
-	}
-	else {
-		if(NTXHWCFG_TST_FLAG(gptNtxHwCfg->m_val.bPCB_Flags2,0)) {
-			// eMMC@SD1 , IOs@SD4 .
-			gptNtxGpioKey_Power = &gt_ntx_gpio_power_key_gp4_25;
-		}
-		else {
-			gptNtxGpioKey_Power = &gt_ntx_gpio_power_key_gp5_8;
-		}
-	}
-
-	// assigns home key .
-	if(11==gptNtxHwCfg->m_val.bKeyPad || 12==gptNtxHwCfg->m_val.bKeyPad || 23==gptNtxHwCfg->m_val.bKeyPad) {
-		// KeyPad is FL_Key/NO_Key/TP+PGUP+PGDN .
-		gptNtxGpioKey_Home = 0;
-	}
-	else if (31==gptNtxHwCfg->m_val.bPCB||
-			32==gptNtxHwCfg->m_val.bPCB||
-			47==gptNtxHwCfg->m_val.bPCB||
-			50==gptNtxHwCfg->m_val.bPCB||
-			58==gptNtxHwCfg->m_val.bPCB||
-			54==gptNtxHwCfg->m_val.bPCB|| 
-			65==gptNtxHwCfg->m_val.bPCB	)
-	{
-		// E60Q1X/E60Q0X/ED0Q0X/E60QFX/E60QHX/ED0Q1X/E60QJX/E60QNX
-		gptNtxGpioKey_Home = &gt_ntx_gpio_home_key;
-	}
-	else if(61==gptNtxHwCfg->m_val.bPCB) {
-		// E60QKX .
-		gptNtxGpioKey_Home = &gt_ntx_gpio_home_key_gp3_27;
-	}
-	else {
-		gptNtxGpioKey_Home = &gt_ntx_gpio_home_key_gp3_24;
-	}
-
-	// assigns frontlight key .
-	if(12==gptNtxHwCfg->m_val.bKeyPad||14==gptNtxHwCfg->m_val.bKeyPad||
-		17==gptNtxHwCfg->m_val.bKeyPad||18==gptNtxHwCfg->m_val.bKeyPad||
-		22==gptNtxHwCfg->m_val.bKeyPad||23==gptNtxHwCfg->m_val.bKeyPad) 
-	{
-		// Keypad is NO_Key || RETURN+HOME+MENU || HOMEPAD || HOME_Key || LEFT+RIGHT+HOME+MENU || TP+PGUP+PGDN
-		gptNtxGpioKey_FL = 0;
-	}
-	else if (31==gptNtxHwCfg->m_val.bPCB||32==gptNtxHwCfg->m_val.bPCB) {
-		// E60Q1X/E60Q0X .
-		gptNtxGpioKey_FL = &gt_ntx_gpio_fl_key;
-	}
-	else {
-		gptNtxGpioKey_FL = &gt_ntx_gpio_fl_key_gp3_26;
-	}
-
-
-	if(0!=gptNtxHwCfg->m_val.bHallSensor) {
-		if (31==gptNtxHwCfg->m_val.bPCB||32==gptNtxHwCfg->m_val.bPCB) {
-			// E60Q1X/E60Q0X .
-			gptNtxGpioSW_HallSensor=&gt_ntx_gpio_hallsensor_key;
-		}
-		else {
-			
-			if(NTXHWCFG_TST_FLAG(gptNtxHwCfg->m_val.bPCB_Flags2,0)) {
-				// eMMC@SD1 , IOs@SD4 .
-				gptNtxGpioSW_HallSensor=&gt_ntx_gpio_hallsensor_key_gp4_23;
-			}
-			else {
-				gptNtxGpioSW_HallSensor=&gt_ntx_gpio_hallsensor_key_gp5_12;
-			}
-		}
-	}
-	else {
-		gptNtxGpioSW_HallSensor=0;
-	}
-
-	if(17==gptNtxHwCfg->m_val.bKeyPad) 
-	{
-		// keypad is 'RETURN+HOME+MENU'
-		gptNtxGpioKey_Menu = &gt_ntx_gpio_menu_key;
-		gptNtxGpioKey_Return = &gt_ntx_gpio_return_key ;
-	}
-	else
-	if(22==gptNtxHwCfg->m_val.bKeyPad) 
-	{
-		// keypad is 'LEFT+RIGHT+HOME+MENU'
-		gptNtxGpioKey_Menu = &gt_ntx_gpio_menu_key_gp3_25;
-		gptNtxGpioKey_Left = &gt_ntx_gpio_left_key;
-		gptNtxGpioKey_Right = &gt_ntx_gpio_right_key;
-	}
-	else
-	if(23==gptNtxHwCfg->m_val.bKeyPad) 
-	{
-		// keypad is 'L1+L2+R1+R2+TP'
-		gptNtxGpioKey_TPSW = &gt_ntx_gpio_tp_sw;
-		gptNtxGpioKey_R1 = &gt_ntx_gpio_r1_key_gp3_26;
-		gptNtxGpioKey_L1 = &gt_ntx_gpio_l1_key_gp3_30;
-		gptNtxGpioKey_R2 = &gt_ntx_gpio_r2_key_gp4_0;
-		gptNtxGpioKey_L2 = &gt_ntx_gpio_l2_key_gp4_2;
-	}
-	else
-	if(24==gptNtxHwCfg->m_val.bKeyPad)
-	{
-		// keypad is 'L1+L2+R1+R2+HOME'
-		gptNtxGpioKey_R1 = &gt_ntx_gpio_r1_key;
-		gptNtxGpioKey_L1 = &gt_ntx_gpio_l1_key;
-		gptNtxGpioKey_R2 = &gt_ntx_gpio_r2_key;
-		gptNtxGpioKey_L2 = &gt_ntx_gpio_l2_key;
-	}
-
-	if(NTXHWCFG_TST_FLAG(gptNtxHwCfg->m_val.bPCB_Flags,6)) 
-	{
-		// Headphone detector ON .
-		gptNtxGpioKey_earphone_detector = &gt_ntx_gpio_earphone_detector_sw;
-	}
-
-
-#elif defined(_MX6Q_) //][!
-	gptNtxGpioKey_Power = &gt_ntx_gpio_power_key;
-#endif //]
-
-	ntx_gpio_keysA[gi_ntx_gpio_keys] = gptNtxGpioKey_Power;
-	gi_ntx_gpio_keys++;
-	if(12==gptNtxHwCfg->m_val.bKeyPad) {
-		// NO_Key .
-	}
-	else 
-	{
-
-
-		if(gptNtxGpioKey_Home && 
-				(13==gptNtxHwCfg->m_val.bKeyPad||
-				 14==gptNtxHwCfg->m_val.bKeyPad||
-				 16==gptNtxHwCfg->m_val.bKeyPad||
-				 17==gptNtxHwCfg->m_val.bKeyPad||
-				 18==gptNtxHwCfg->m_val.bKeyPad||
-				 22==gptNtxHwCfg->m_val.bKeyPad||
-				 24==gptNtxHwCfg->m_val.bKeyPad))
-		{
-			// FL+HOME/HOME_Key/FL+HOMEPAD/RETURN+HOME+MENU/HOMEPAD/LEFT+RIGHT+HOME+MENU
-			// L1+L2+R1+R2+HOME
-			ntx_gpio_keysA[gi_ntx_gpio_keys] = gptNtxGpioKey_Home;
-			gi_ntx_gpio_keys++;
-		}
-
-		if(gptNtxGpioKey_FL && 
-			(11==gptNtxHwCfg->m_val.bKeyPad||
-			13==gptNtxHwCfg->m_val.bKeyPad||
-			16==gptNtxHwCfg->m_val.bKeyPad)) 
-		{
-			// FL_Key/FL+HOME/FL+HOMEPAD
-			ntx_gpio_keysA[gi_ntx_gpio_keys] = gptNtxGpioKey_FL;
-			gi_ntx_gpio_keys++;
-		}
-
-		if(gptNtxGpioKey_Menu) 
-		{
-			// RETURN+HOME+MENU
-			ntx_gpio_keysA[gi_ntx_gpio_keys] = gptNtxGpioKey_Menu;
-			gi_ntx_gpio_keys++;
-		}
-
-		if(gptNtxGpioKey_Return) 
-		{
-			// RETURN+HOME+MENU
-			ntx_gpio_keysA[gi_ntx_gpio_keys] = gptNtxGpioKey_Return;
-			gi_ntx_gpio_keys++;
-		}
-
-		if(gptNtxGpioKey_Left) 
-		{
-			// 
-			ntx_gpio_keysA[gi_ntx_gpio_keys] = gptNtxGpioKey_Left;
-			gi_ntx_gpio_keys++;
-		}
-
-		if(gptNtxGpioKey_Right) 
-		{
-			// 
-			ntx_gpio_keysA[gi_ntx_gpio_keys] = gptNtxGpioKey_Right;
-			gi_ntx_gpio_keys++;
-		}
-
-		if(gptNtxGpioKey_earphone_detector) 
-		{
-			// 
-			ntx_gpio_keysA[gi_ntx_gpio_keys] = gptNtxGpioKey_earphone_detector;
-			gi_ntx_gpio_keys++;
-		}
-
-		if(gptNtxGpioKey_TPSW) 
-		{
-			// 
-			ntx_gpio_keysA[gi_ntx_gpio_keys] = gptNtxGpioKey_TPSW;
-			gi_ntx_gpio_keys++;
-		}
-
-		if(gptNtxGpioKey_PGUP) 
-		{
-			// 
-			ntx_gpio_keysA[gi_ntx_gpio_keys] = gptNtxGpioKey_PGUP;
-			gi_ntx_gpio_keys++;
-		}
-
-		if(gptNtxGpioKey_PGDN)
-		{
-			// 
-			ntx_gpio_keysA[gi_ntx_gpio_keys] = gptNtxGpioKey_PGDN;
-			gi_ntx_gpio_keys++;
-		}
-
-		if(gptNtxGpioKey_L1)
-		{
-			ntx_gpio_keysA[gi_ntx_gpio_keys] = gptNtxGpioKey_L1;
-			gi_ntx_gpio_keys++;
-		}
-		if(gptNtxGpioKey_L2)
-		{
-			ntx_gpio_keysA[gi_ntx_gpio_keys] = gptNtxGpioKey_L2;
-			gi_ntx_gpio_keys++;
-		}
-		if(gptNtxGpioKey_R1)
-		{
-			ntx_gpio_keysA[gi_ntx_gpio_keys] = gptNtxGpioKey_R1;
-			gi_ntx_gpio_keys++;
-		}
-		if(gptNtxGpioKey_R2)
-		{
-			ntx_gpio_keysA[gi_ntx_gpio_keys] = gptNtxGpioKey_R2;
-			gi_ntx_gpio_keys++;
-		}
-
-	}
-
-
-	if(gi_ntx_gpio_keys>=NTX_GPIO_KEYS) {
-		printf("\n\n\n%s(%d) memory overwrite !!!\n\n\n",__FILE__,__LINE__);
-		udelay(1000*1000);
-	}
-}
 
 void ntx_hw_late_init(void) 
 {
@@ -1936,17 +1368,19 @@ void ntx_hw_late_init(void)
 		_load_isd_hwconfig();
 	}
 
-	_load_ntx_sn();
-
-	ntx_keys_setup();
-
 #if defined(_MX6Q_) //[
+	if(NTXHWCFG_TST_FLAG(gptNtxHwCfg->m_val.bPCB_Flags,0)) 
+	{
+		
+		for(i=0;i<gi_ntx_gpio_keys;i++) {
+			ntx_gpio_init(ntx_gpio_keysA[i]);
+		}
+		
+	}
 #else //][!
-
-
 	if(9==gptNtxHwCfg->m_val.bCustomer) {
 		_led_R(0);
-		_led_G(1);
+		_led_G(0);
 		_led_B(1);
 	}
 	else {
@@ -1955,15 +1389,44 @@ void ntx_hw_late_init(void)
 		_led_B(0);
 	}
 
+	if (31==gptNtxHwCfg->m_val.bPCB||
+			32==gptNtxHwCfg->m_val.bPCB||
+			47==gptNtxHwCfg->m_val.bPCB|| 
+			50==gptNtxHwCfg->m_val.bPCB||
+			51==gptNtxHwCfg->m_val.bPCB) 
+	{
+		// E60Q1X/E60Q0X/ED0Q0X/E60QF0 .
+	}
+	else 
+	{
+		//  
+		ntx_gpio_keysA[0] = &gt_ntx_gpio_home_key_gp3_24;
+	}
   
+  // Assign front light key GPIO
+  if (31==gptNtxHwCfg->m_val.bPCB||32==gptNtxHwCfg->m_val.bPCB) { // E60Q1X/E60Q0X
+    ntx_gpio_keysA[1] = &gt_ntx_gpio_fl_key;
+  }
+  else if (47==gptNtxHwCfg->m_val.bPCB) { //ED0Q0X
+    ntx_gpio_keysA[1] = &gt_ntx_gpio_return_key;
+	}
+  else if (36==gptNtxHwCfg->m_val.bPCB||
+			40==gptNtxHwCfg->m_val.bPCB||
+			50==gptNtxHwCfg->m_val.bPCB||
+			51==gptNtxHwCfg->m_val.bPCB) 
+	{ //E60Q3X/E60Q5X/E60QFX/E60QHX
+    ntx_gpio_keysA[1] = &gt_ntx_gpio_fl_key_gp3_26;
+  }
+  else {
+    ntx_gpio_keysA[1] = 0;
+  }
+    
+  if (47==gptNtxHwCfg->m_val.bPCB) { //ED0Q0X
+    ntx_gpio_keysA[2] = &gt_ntx_gpio_menu_key;
+	}
 
 	pt_gpio = &gt_ntx_gpio_esdin;
 	ntx_gpio_init(pt_gpio);
-
-
-	if(NTXHWCFG_TST_FLAG(gptNtxHwCfg->m_val.bPCB_Flags2,0)) {
-		ntx_gpio_init(&gt_ntx_gpio_chg_4_20);
-	}
 
 	if (36==gptNtxHwCfg->m_val.bPCB||40==gptNtxHwCfg->m_val.bPCB) {
 		// E60Q32/E60Q52
@@ -1975,39 +1438,13 @@ void ntx_hw_late_init(void)
 	if( (46==gptNtxHwCfg->m_val.bPCB && gptNtxHwCfg->m_val.bPCB_REV>=0x10) ||
 			48==gptNtxHwCfg->m_val.bPCB ||
 			50==gptNtxHwCfg->m_val.bPCB ||
-	 		51==gptNtxHwCfg->m_val.bPCB	||
-			55==gptNtxHwCfg->m_val.bPCB)
+	 		51==gptNtxHwCfg->m_val.bPCB	)
 	{
-		// >=E60Q9XA1 or =E60QAX | E60QFX | E60QHX |E70Q02 .
+		// >=E60Q9XA1 or =E60QAX | E60QFX | E60QHX 
 		msp430_I2C_Chn_set(0); // MSP430 @ I2C1 .
-	}
-	else if(64==gptNtxHwCfg->m_val.bPCB) {
-		// C31Q0X .
-		msp430_I2C_Chn_set(1); // MSP430 @ I2C2 .
-		ntx_gpio_set_value(&gt_ntx_gpio_ON_LED_gp5_13,0);	// turn off it8951 power
-	}
-	else if(70==gptNtxHwCfg->m_val.bPCB) {
-		// E70Q2X .
-		msp430_I2C_Chn_set(2); // MSP430 @ I2C3 .
 	}
 
 
 #endif //]
-	if(3==gptNtxHwCfg->m_val.bUIConfig) {
-		// MFG mode .
-		RC5T619_set_charger_params(USB_CHARGER_CDP);
-	}
-	else {
-		if (49==gptNtxHwCfg->m_val.bPCB || 69==gptNtxHwCfg->m_val.bPCB) {
-			// run charger detect for E60QDx,E60QQx
-			RC5T619_write_reg(0xBA, 0x88);	// set CHGPON to 3.2V
-			RC5T619_write_reg(0xB4, 0x20);	// set USB_VCONTMASK
-
-			RC5T619_charger_redetect();
-			ntx_detect_usb_plugin (1);
-		}
-		else
-			RC5T619_set_charger_params(USB_CHARGER_SDP);
-	}
 }
 

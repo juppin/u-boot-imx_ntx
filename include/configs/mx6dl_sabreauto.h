@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012-2013 Freescale Semiconductor, Inc.
+ * Copyright (C) 2012 Freescale Semiconductor, Inc.
  *
  * Configuration settings for the MX6Solo SABRE-AI Freescale board.
  *
@@ -91,6 +91,8 @@
 #define CONFIG_BOOTP_GATEWAY
 #define CONFIG_BOOTP_DNS
 
+#define CONFIG_CMD_SPI
+#define CONFIG_CMD_I2C
 #define CONFIG_CMD_IMXOTP
 /*Uncomment if wish to view Parallel NOR as device.
  *If you want to use it as Boot device you need
@@ -98,13 +100,8 @@
  */
 /*#define CONFIG_CMD_WEIMNOR*/
 
-
-#ifndef CONFIG_CMD_WEIMNOR
-#define CONFIG_CMD_SPI
-#define CONFIG_CMD_I2C
+/* Enable below configure when supporting nand */
 #define CONFIG_CMD_SF
-#endif
-
 #define CONFIG_CMD_MMC
 #define CONFIG_CMD_ENV
 #define CONFIG_CMD_REGUL
@@ -149,7 +146,7 @@
  * Miscellaneous configurable options
  */
 #define CONFIG_SYS_LONGHELP		/* undef to save memory */
-#define CONFIG_SYS_PROMPT		"MX6DL SABREAUTO U-Boot > "
+#define CONFIG_SYS_PROMPT		"MX6SOLO SABREAUTO U-Boot > "
 #define CONFIG_AUTO_COMPLETE
 #define CONFIG_SYS_CBSIZE		1024	/* Console I/O Buffer Size */
 /* Print Buffer Size */
@@ -224,13 +221,13 @@
 	#define CONFIG_SYS_FLASH_CFI			/* use the Common Flash Interface */
 	#define CONFIG_FLASH_CFI_DRIVER			/* use the CFI driver */
 	#define CONFIG_SYS_FLASH_BASE		0x08000000	/* start of FLASH   */
-	#define CONFIG_SYS_FLASH_USE_BUFFER_WRITE 1
+	#define CONFIG_SYS_FLASH_SIZE		0x08000000	/* max flash size in bytes */
+	#define CONFIG_SYS_FLASH_USE_BUFFER_WRITE
 	#define CONFIG_SYS_FLASH_CFI_WIDTH	FLASH_CFI_16BIT
 	#define CONFIG_SYS_FLASH_BANKS_LIST	{CONFIG_SYS_FLASH_BASE}
 	#define CONFIG_SYS_MAX_FLASH_BANKS	1		/* number of banks */
 	#define CONFIG_SYS_MAX_FLASH_SECT	256		/* max sectors per device */
-	#define CONFIG_SYS_FLASH_PROTECTION 1
-	#define CONFIG_SYS_FLASH_EMPTY_INFO
+	#define CONFIG_SYS_FLASH_PROTECTION
 #endif
 
 /* Regulator Configs */
@@ -328,7 +325,7 @@
 #elif defined(CONFIG_FSL_ENV_IN_SF)
 	#define CONFIG_ENV_IS_IN_SPI_FLASH	1
 	#define CONFIG_ENV_SPI_CS		1
-	#define CONFIG_ENV_OFFSET       0x40000
+	#define CONFIG_ENV_OFFSET       (768 * 1024)
 #else
 	#define CONFIG_ENV_IS_NOWHERE	1
 #endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Freescale Semiconductor, Inc.
+ * Copyright (C) 2010-2012 Freescale Semiconductor, Inc.
  *
  * See file CREDITS for list of people who contributed to this
  * project.
@@ -236,19 +236,23 @@ void board_mmu_init(void)
 }
 #endif
 
+#ifdef CONFIG_DWC_AHSATA
+
 #define ANATOP_PLL_LOCK                 0x80000000
 #define ANATOP_PLL_ENABLE_MASK          0x00002000
 #define ANATOP_PLL_BYPASS_MASK          0x00010000
+#define ANATOP_PLL_LOCK                 0x80000000
 #define ANATOP_PLL_PWDN_MASK            0x00001000
 #define ANATOP_PLL_HOLD_RING_OFF_MASK   0x00000800
 #define ANATOP_SATA_CLK_ENABLE_MASK     0x00100000
 
-#ifdef CONFIG_DWC_AHSATA
 /* Staggered Spin-up */
 #define	HOST_CAP_SSS			(1 << 27)
 /* host version register*/
 #define	HOST_VERSIONR			0xfc
 #define PORT_SATA_SR			0x128
+#define	PORT_PHY_CTL			0x178
+#define	PORT_PHY_CTL_PDDQ_LOC		0x100000
 
 int sata_initialize(void)
 {
@@ -256,6 +260,11 @@ int sata_initialize(void)
 	u32 iterations = 1000000;
 
 	if (sata_curr_device == -1) {
+		/* Make sure that the PDDQ mode is disabled. */
+		reg = readl(SATA_ARB_BASE_ADDR + PORT_PHY_CTL);
+		writel(reg & (~PORT_PHY_CTL_PDDQ_LOC),
+				SATA_ARB_BASE_ADDR + PORT_PHY_CTL);
+
 		/* Reset HBA */
 		writel(HOST_RESET, SATA_ARB_BASE_ADDR + HOST_CTL);
 
@@ -290,9 +299,8 @@ int sata_initialize(void)
 
 	return __sata_initialize();
 }
-#endif
 
-static int setup_sata(void)
+int setup_sata(void)
 {
 	u32 reg = 0;
 	s32 timeout = 100000;
@@ -336,8 +344,16 @@ static int setup_sata(void)
 	reg |= 0x59124c6;
 	writel(reg, IOMUXC_BASE_ADDR + 0x34);
 
+	if (sata_curr_device == -1) {
+		/* Enable PDDQ mode in default if there isn't sata boot */
+		reg = readl(SATA_ARB_BASE_ADDR + PORT_PHY_CTL);
+		writel(reg | PORT_PHY_CTL_PDDQ_LOC,
+				SATA_ARB_BASE_ADDR + PORT_PHY_CTL);
+	}
+
 	return 0;
 }
+#endif
 
 int dram_init(void)
 {
@@ -643,6 +659,19 @@ struct fsl_esdhc_cfg usdhc_cfg[4] = {
 	{USDHC4_BASE_ADDR, 1, 1, 1, 0},
 };
 
+#ifdef CONFIG_DYNAMIC_MMC_DEVNO
+int get_mmc_env_devno(void)
+{
+	uint soc_sbmr = readl(SRC_BASE_ADDR + 0x4);
+
+	if (SD_BOOT == boot_dev || MMC_BOOT == boot_dev) {
+		/* BOOT_CFG2[3] and BOOT_CFG2[4] */
+		return (soc_sbmr & 0x00001800) >> 11;
+	} else
+		return -1;
+
+}
+#endif
 #if defined CONFIG_MX6Q
 iomux_v3_cfg_t usdhc1_pads[] = {
 	MX6Q_PAD_SD1_CLK__USDHC1_CLK,
@@ -734,19 +763,6 @@ iomux_v3_cfg_t usdhc4_pads[] = {
 	MX6DL_PAD_SD4_DAT7__USDHC4_DAT7,
 };
 #endif
-
-#define USDHC_PAD_CTRL_DEFAULT (PAD_CTL_PKE | PAD_CTL_PUE |		\
-		PAD_CTL_PUS_47K_UP  | PAD_CTL_SPEED_LOW |		\
-		PAD_CTL_DSE_80ohm   | PAD_CTL_SRE_FAST  | PAD_CTL_HYS)
-
-#define USDHC_PAD_CTRL_100MHZ (PAD_CTL_PKE | PAD_CTL_PUE |	\
-		PAD_CTL_PUS_47K_UP  | PAD_CTL_SPEED_MED |		\
-		PAD_CTL_DSE_40ohm   | PAD_CTL_SRE_FAST  | PAD_CTL_HYS)
-
-#define USDHC_PAD_CTRL_200MHZ (PAD_CTL_PKE | PAD_CTL_PUE |	\
-		PAD_CTL_PUS_47K_UP  | PAD_CTL_SPEED_HIGH |		\
-		PAD_CTL_DSE_40ohm   | PAD_CTL_SRE_FAST   | PAD_CTL_HYS)
-
 int usdhc_gpio_init(bd_t *bis)
 {
 	s32 status = 0;
@@ -783,57 +799,6 @@ int usdhc_gpio_init(bd_t *bis)
 	return status;
 }
 
-static void usdhc_switch_pad(iomux_v3_cfg_t *pad_list, unsigned count,
-	iomux_v3_cfg_t *new_pad_list, iomux_v3_cfg_t pad_val)
-{
-	u32 i;
-
-	for (i = 0; i < count; i++) {
-		new_pad_list[i] = pad_list[i] & (~MUX_PAD_CTRL_MASK);
-		new_pad_list[i] |= MUX_PAD_CTRL(pad_val);
-	}
-}
-
-int board_mmc_io_switch(u32 index, u32 clock)
-{
-	iomux_v3_cfg_t new_pads[14];
-	u32 count;
-	iomux_v3_cfg_t pad_ctrl = USDHC_PAD_CTRL_DEFAULT;
-
-	if (clock >= 200000000)
-		pad_ctrl = USDHC_PAD_CTRL_200MHZ;
-	else if (clock == 100000000)
-		pad_ctrl = USDHC_PAD_CTRL_100MHZ;
-
-	switch (index) {
-	case 0:
-		count = sizeof(usdhc1_pads) / sizeof(usdhc1_pads[0]);
-		usdhc_switch_pad(usdhc1_pads, count, new_pads, pad_ctrl);
-		break;
-	case 1:
-		count = sizeof(usdhc2_pads) / sizeof(usdhc2_pads[0]);
-		usdhc_switch_pad(usdhc2_pads, count, new_pads, pad_ctrl);
-		break;
-	case 2:
-		count = sizeof(usdhc3_pads) / sizeof(usdhc3_pads[0]);
-		usdhc_switch_pad(usdhc3_pads, count, new_pads, pad_ctrl);
-		break;
-	case 3:
-		count = sizeof(usdhc4_pads) / sizeof(usdhc4_pads[0]);
-		usdhc_switch_pad(usdhc4_pads, count, new_pads, pad_ctrl);
-		break;
-	default:
-		printf("Warning: you configured more USDHC controllers"
-			"(%d) then supported by the board (%d)\n",
-			index+1, CONFIG_SYS_FSL_USDHC_NUM);
-		return -1;
-	}
-
-	mxc_iomux_v3_setup_multiple_pads(new_pads, count);
-
-	return 0;
-}
-
 int board_mmc_init(bd_t *bis)
 {
 	if (!usdhc_gpio_init(bis))
@@ -844,7 +809,7 @@ int board_mmc_init(bd_t *bis)
 
 #ifdef CONFIG_MXC_EPDC
 #ifdef CONFIG_SPLASH_SCREEN
-int setup_splash_img(void)
+int setup_splash_img()
 {
 #ifdef CONFIG_SPLASH_IS_IN_MMC
 	int mmc_dev = get_mmc_env_devno();
@@ -882,8 +847,6 @@ int setup_splash_img(void)
 
 	return (n == blk_cnt) ? 0 : -1;
 #endif
-
-	return 0;
 }
 #endif
 
@@ -918,7 +881,7 @@ struct epdc_timing_params panel_timings = {
 	.num_ce = 1,
 };
 
-static void setup_epdc_power(void)
+static void setup_epdc_power()
 {
 	unsigned int reg;
 
@@ -950,13 +913,73 @@ static void setup_epdc_power(void)
 	writel(reg, GPIO2_BASE_ADDR + GPIO_GDIR);
 }
 
-int setup_waveform_file(void)
+unsigned int g_pgood_1, g_pgood_2, g_pgood_3;
+void epdc_power_on()
+{
+	unsigned int reg;
+
+	g_pgood_1 = readl(GPIO2_BASE_ADDR + GPIO_DR);
+
+	/* Set EPD_PWR_CTL0 to high - enable EINK_VDD (3.15) */
+	reg = readl(GPIO2_BASE_ADDR + GPIO_DR);
+	reg |= (1 << 20);
+	writel(reg, GPIO2_BASE_ADDR + GPIO_DR);
+
+	/* Set PMIC Wakeup to high - enable Display power */
+	reg = readl(GPIO3_BASE_ADDR + GPIO_DR);
+	reg |= (1 << 20);
+	writel(reg, GPIO3_BASE_ADDR + GPIO_DR);
+
+	g_pgood_2 = readl(GPIO2_BASE_ADDR + GPIO_DR);
+		udelay(1000000);
+	g_pgood_3 = readl(GPIO2_BASE_ADDR + GPIO_DR);
+return;
+	/* Wait for PWRGOOD == 1 */
+	while (1) {
+		reg = readl(GPIO2_BASE_ADDR + GPIO_DR);
+		if (!(reg & (1 << 21)))
+			break;
+
+		udelay(100);
+	}
+
+	/* Enable VCOM */
+	reg = readl(GPIO3_BASE_ADDR + GPIO_DR);
+	reg |= (1 << 17);
+	writel(reg, GPIO3_BASE_ADDR + GPIO_DR);
+
+	reg = readl(GPIO3_BASE_ADDR + GPIO_DR);
+
+	udelay(500);
+}
+
+void  epdc_power_off()
+{
+	unsigned int reg;
+	/* Set PMIC Wakeup to low - disable Display power */
+	reg = readl(GPIO3_BASE_ADDR + GPIO_DR);
+	reg &= ~(1 << 20);
+	writel(reg, GPIO3_BASE_ADDR + GPIO_DR);
+
+	/* Disable VCOM */
+	reg = readl(GPIO3_BASE_ADDR + GPIO_DR);
+	reg &= ~(1 << 17);
+	writel(reg, GPIO3_BASE_ADDR + GPIO_DR);
+
+	/* Set EPD_PWR_CTL0 to low - disable EINK_VDD (3.15) */
+	reg = readl(GPIO2_BASE_ADDR + GPIO_DR);
+	reg &= ~(1 << 20);
+	writel(reg, GPIO2_BASE_ADDR + GPIO_DR);
+}
+
+int setup_waveform_file()
 {
 #ifdef CONFIG_WAVEFORM_FILE_IN_MMC
 	int mmc_dev = get_mmc_env_devno();
 	ulong offset = CONFIG_WAVEFORM_FILE_OFFSET;
 	ulong size = CONFIG_WAVEFORM_FILE_SIZE;
 	ulong addr = CONFIG_WAVEFORM_BUF_ADDR;
+	char *s = NULL;
 	struct mmc *mmc = find_mmc_device(mmc_dev);
 	uint blk_start, blk_cnt, n;
 
@@ -983,8 +1006,10 @@ int setup_waveform_file(void)
 #endif
 }
 
-static void epdc_enable_pins(void)
+static void setup_epdc()
 {
+	unsigned int reg;
+
 	/* epdc iomux settings */
 	mxc_iomux_v3_setup_pad(MX6DL_PAD_EIM_A16__EPDC_SDDO_0);
 	mxc_iomux_v3_setup_pad(MX6DL_PAD_EIM_DA10__EPDC_SDDO_1);
@@ -1006,36 +1031,6 @@ static void epdc_enable_pins(void)
 	mxc_iomux_v3_setup_pad(MX6DL_PAD_EIM_DA4__EPDC_SDCE_0);
 	mxc_iomux_v3_setup_pad(MX6DL_PAD_EIM_DA5__EPDC_SDCE_1);
 	mxc_iomux_v3_setup_pad(MX6DL_PAD_EIM_DA6__EPDC_SDCE_2);
-}
-
-static void epdc_disable_pins(void)
-{
-	/* Configure MUX settings for EPDC pins to GPIO */
-	mxc_iomux_v3_setup_pad(MX6DL_PAD_EIM_A16__GPIO_2_22);
-	mxc_iomux_v3_setup_pad(MX6DL_PAD_EIM_DA10__GPIO_3_10);
-	mxc_iomux_v3_setup_pad(MX6DL_PAD_EIM_DA12__GPIO_3_12);
-	mxc_iomux_v3_setup_pad(MX6DL_PAD_EIM_DA11__GPIO_3_11);
-	mxc_iomux_v3_setup_pad(MX6DL_PAD_EIM_LBA__GPIO_2_27);
-	mxc_iomux_v3_setup_pad(MX6DL_PAD_EIM_EB2__GPIO_2_30);
-	mxc_iomux_v3_setup_pad(MX6DL_PAD_EIM_CS0__GPIO_2_23);
-	mxc_iomux_v3_setup_pad(MX6DL_PAD_EIM_RW__GPIO_2_26);
-	mxc_iomux_v3_setup_pad(MX6DL_PAD_EIM_A21__GPIO_2_17);
-	mxc_iomux_v3_setup_pad(MX6DL_PAD_EIM_A22__GPIO_2_16);
-	mxc_iomux_v3_setup_pad(MX6DL_PAD_EIM_A23__GPIO_6_6);
-	mxc_iomux_v3_setup_pad(MX6DL_PAD_EIM_A24__GPIO_5_4);
-	mxc_iomux_v3_setup_pad(MX6DL_PAD_EIM_D31__GPIO_3_31);
-	mxc_iomux_v3_setup_pad(MX6DL_PAD_EIM_D27__GPIO_3_27);
-	mxc_iomux_v3_setup_pad(MX6DL_PAD_EIM_DA1__GPIO_3_1);
-	mxc_iomux_v3_setup_pad(MX6DL_PAD_EIM_EB1__GPIO_2_29);
-	mxc_iomux_v3_setup_pad(MX6DL_PAD_EIM_DA2__GPIO_3_2);
-	mxc_iomux_v3_setup_pad(MX6DL_PAD_EIM_DA4__GPIO_3_4);
-	mxc_iomux_v3_setup_pad(MX6DL_PAD_EIM_DA5__GPIO_3_5);
-	mxc_iomux_v3_setup_pad(MX6DL_PAD_EIM_DA6__GPIO_3_6);
-}
-
-static void setup_epdc(void)
-{
-	unsigned int reg;
 
 	/*** epdc Maxim PMIC settings ***/
 
@@ -1097,64 +1092,6 @@ static void setup_epdc(void)
 
 	/* Assign fb_base */
 	gd->fb_base = CONFIG_FB_BASE;
-}
-
-void epdc_power_on()
-{
-	unsigned int reg;
-
-	/* Set EPD_PWR_CTL0 to high - enable EINK_VDD (3.15) */
-	reg = readl(GPIO2_BASE_ADDR + GPIO_DR);
-	reg |= (1 << 20);
-	writel(reg, GPIO2_BASE_ADDR + GPIO_DR);
-	udelay(1000);
-
-	/* Enable epdc signal pin */
-	epdc_enable_pins();
-
-	/* Set PMIC Wakeup to high - enable Display power */
-	reg = readl(GPIO3_BASE_ADDR + GPIO_DR);
-	reg |= (1 << 20);
-	writel(reg, GPIO3_BASE_ADDR + GPIO_DR);
-
-	/* Wait for PWRGOOD == 1 */
-	while (1) {
-		reg = readl(GPIO2_BASE_ADDR + GPIO_DR);
-		if (!(reg & (1 << 21)))
-			break;
-
-		udelay(100);
-	}
-
-	/* Enable VCOM */
-	reg = readl(GPIO3_BASE_ADDR + GPIO_DR);
-	reg |= (1 << 17);
-	writel(reg, GPIO3_BASE_ADDR + GPIO_DR);
-
-	reg = readl(GPIO3_BASE_ADDR + GPIO_DR);
-
-	udelay(500);
-}
-
-void  epdc_power_off()
-{
-	unsigned int reg;
-	/* Set PMIC Wakeup to low - disable Display power */
-	reg = readl(GPIO3_BASE_ADDR + GPIO_DR);
-	reg &= ~(1 << 20);
-	writel(reg, GPIO3_BASE_ADDR + GPIO_DR);
-
-	/* Disable VCOM */
-	reg = readl(GPIO3_BASE_ADDR + GPIO_DR);
-	reg &= ~(1 << 17);
-	writel(reg, GPIO3_BASE_ADDR + GPIO_DR);
-
-	epdc_disable_pins();
-
-	/* Set EPD_PWR_CTL0 to low - disable EINK_VDD (3.15) */
-	reg = readl(GPIO2_BASE_ADDR + GPIO_DR);
-	reg &= ~(1 << 20);
-	writel(reg, GPIO2_BASE_ADDR + GPIO_DR);
 }
 #endif
 
@@ -1290,8 +1227,10 @@ int board_init(void)
 	gd->bd->bi_boot_params = PHYS_SDRAM_1 + 0x100;
 
 	setup_uart();
-	if (cpu_is_mx6q())
-		setup_sata();
+
+#ifdef CONFIG_DWC_AHSATA
+	setup_sata();
+#endif
 
 #ifdef CONFIG_VIDEO_MX5
 
@@ -1513,7 +1452,8 @@ int checkboard(void)
 	}
 
 #ifdef CONFIG_SECURE_BOOT
-	get_hab_status();
+	if (check_hab_enable() == 1)
+		get_hab_status();
 #endif
 
 	return 0;

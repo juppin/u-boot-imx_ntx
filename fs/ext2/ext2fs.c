@@ -344,7 +344,7 @@ int ext2fs_read_file
 int ext2fs_iterate_dir(struct ext2fs_node *dir, char *name,
 					struct ext2fs_node **fnode, int *ftype)
 {
-	unsigned int limit =0;
+	unsigned int limit = 0;
 	unsigned int fpos = 0;
 	int status;
 	struct ext2fs_node *diro = (struct ext2fs_node *) dir;
@@ -361,10 +361,9 @@ int ext2fs_iterate_dir(struct ext2fs_node *dir, char *name,
 		}
 	}
 	/* Search the file.  */
-	//while (fpos < __le32_to_cpu (diro->inode.size)) 
-	while ((limit<20) &&
-			fpos < __le32_to_cpu (diro->inode.size)) 
-	{
+//	while (fpos < __le32_to_cpu (diro->inode.size)) {
+	while ((limit < 20) &&
+		   (fpos < __le32_to_cpu (diro->inode.size))) {
 		struct ext2_dirent dirent;
 
 		status = ext2fs_read_file (diro, fpos,

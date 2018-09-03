@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2013 Freescale Semiconductor, Inc.
+ * Copyright (C) 2010-2012 Freescale Semiconductor, Inc.
  *
  * See file CREDITS for list of people who contributed to this
  * project.
@@ -108,9 +108,6 @@ enum pll_clocks {
 #define TEMPERATURE_HOT			80
 #define TEMPERATURE_MAX			125
 #define REG_VALUE_TO_CEL(ratio, raw) ((raw_n40c - raw) * 100 / ratio - 40)
-#define FACTOR1	15976
-#define FACTOR2	4297157
-
 static int cpu_tmp;
 static unsigned int fuse;
 
@@ -289,7 +286,7 @@ static u32 __get_emi_slow_clk(void)
 	u32 emi_clk_sel = (cscmr1 & MXC_CCM_CSCMR1_ACLK_EMI_SLOW_MASK) >>
 		MXC_CCM_CSCMR1_ACLK_EMI_SLOW_OFFSET;
 	u32 podf = (cscmr1 & MXC_CCM_CSCMR1_ACLK_EMI_SLOW_PODF_MASK) >>
-			MXC_CCM_CSCMR1_ACLK_EMI_SLOW_PODF_OFFSET;
+			MXC_CCM_CSCMR1_ACLK_EMI_PODF_OFFSET;
 
 	switch (emi_clk_sel) {
 	default:
@@ -880,7 +877,7 @@ static inline int read_cpu_temperature(void)
 			MXC_CCM_CCGR2);
 	fuse = readl(OCOTP_BASE_ADDR + OCOTP_THERMAL_OFFSET);
 	writel(ccm_ccgr2, MXC_CCM_CCGR2);
-	if (fuse == 0 || fuse == 0xffffffff || (fuse & 0xfff00000) == 0)
+	if (fuse == 0 || fuse == 0xffffffff)
 		return TEMPERATURE_MIN;
 
 	/* Fuse data layout:
@@ -891,25 +888,7 @@ static inline int read_cpu_temperature(void)
 	raw_hot = (fuse & 0xfff00) >> 8;
 	hot_temp = fuse & 0xff;
 
-	/*
-	 * Only when high temperature calibration
-	 * data not used, we use universal equation to get thermal
-	 * sensor's ratio.
-	 */
-#ifndef USE_CALIBRATION
-	/*
-	 * The universal equation for thermal sensor
-	 * is slope = 0.4297157 - (0.0015976 * 25C fuse),
-	 * here we convert them to integer to make them
-	 * easy for counting, FACTOR1 is 15976,
-	 * FACTOR2 is 4297157. Our ratio = -100 * slope.
-	 */
-	ratio = ((FACTOR1 * raw_25c - FACTOR2) + 50000) / 100000;
-#else
 	ratio = ((raw_25c - raw_hot) * 100) / (hot_temp - 25);
-#endif
-
-	printf("Thermal sensor with ratio = %d\n", ratio);
 	raw_n40c = raw_25c + (13 * ratio) / 20;
 
 	/* now we only using single measure, every time we measure
@@ -1031,52 +1010,41 @@ int cpu_eth_init(bd_t *bis)
 	return rc;
 }
 
+#ifndef CONFIG_L2_OFF
+void l2_cache_enable(void)
+{
+    unsigned long i;
+
+    __asm__ __volatile__("mrc p15, 0, %0, c1, c0, 1":"=r"(i));
+    __asm__ __volatile__("orr %0, %0, #0x2":"=r"(i));
+    __asm__ __volatile__("mcr p15, 0, %0, c1, c0, 1":"=r"(i));
+}
+
+void l2_cache_disable(void)
+{
+    unsigned long i;
+
+    __asm__ __volatile__("mrc p15, 0, %0, c1, c0, 1":"=r"(i));
+    __asm__ __volatile__("bic %0, %0, #0x2":"=r"(i));
+    __asm__ __volatile__("mcr p15, 0, %0, c1, c0, 1":"=r"(i));
+}
+/*dummy function for L2 ON*/
+u32 get_device_type(void)
+{
+	return 0;
+}
+#endif
+
 #if defined(CONFIG_ARCH_CPU_INIT)
 int arch_cpu_init(void)
 {
 	int val;
 
-	/* Clear MMDC channel mask */
-	writel(0, CCM_BASE_ADDR + 0x4);
-
-	/* Due to hardware limitation, on MX6Q we need to gate/ungate all PFDs
-	 * to make sure PFD is working right, otherwise, PFDs may
-	 * not output clock after reset, MX6DL and MX6SL have added 396M pfd
-	 * workaround in ROM code, as bus clock need it
-	 */
-	writel(BM_ANADIG_PFD_480_PFD3_CLKGATE |
-		BM_ANADIG_PFD_480_PFD2_CLKGATE |
-		BM_ANADIG_PFD_480_PFD1_CLKGATE |
-		BM_ANADIG_PFD_480_PFD0_CLKGATE,
-		ANATOP_BASE_ADDR + HW_ANADIG_PFD_480_SET);
-	writel(BM_ANADIG_PFD_528_PFD3_CLKGATE |
-#ifdef CONFIG_MX6Q
-		BM_ANADIG_PFD_528_PFD2_CLKGATE |
-#endif
-		BM_ANADIG_PFD_528_PFD1_CLKGATE |
-		BM_ANADIG_PFD_528_PFD0_CLKGATE,
-		ANATOP_BASE_ADDR + HW_ANADIG_PFD_528_SET);
-
-	writel(BM_ANADIG_PFD_480_PFD3_CLKGATE |
-		BM_ANADIG_PFD_480_PFD2_CLKGATE |
-		BM_ANADIG_PFD_480_PFD1_CLKGATE |
-		BM_ANADIG_PFD_480_PFD0_CLKGATE,
-		ANATOP_BASE_ADDR + HW_ANADIG_PFD_480_CLR);
-	writel(BM_ANADIG_PFD_528_PFD3_CLKGATE |
-#ifdef CONFIG_MX6Q
-		BM_ANADIG_PFD_528_PFD2_CLKGATE |
-#endif
-		BM_ANADIG_PFD_528_PFD1_CLKGATE |
-		BM_ANADIG_PFD_528_PFD0_CLKGATE,
-		ANATOP_BASE_ADDR + HW_ANADIG_PFD_528_CLR);
-
 	icache_enable();
 	dcache_enable();
 
-
 	/* Clear MMDC channel mask */
 	writel(0, CCM_BASE_ADDR + 0x4);
-
 
 #ifndef CONFIG_L2_OFF
 	l2_cache_enable();
@@ -1102,9 +1070,6 @@ int arch_cpu_init(void)
 	val |= (0x1 << 18);
 	REG_WR(IOMUXC_BASE_ADDR, IOMUXC_GPR1_OFFSET, val);
 
-	/*clear PowerDown Enable bit of WDOGx_WMCR*/
-	writew(0, WDOG1_BASE_ADDR + 0x08);
-	writew(0, WDOG2_BASE_ADDR + 0x08);
 	return 0;
 }
 #endif
@@ -1206,14 +1171,14 @@ int check_and_clean_recovery_flag(void)
 {
 	int flag_set = 0;
 	u32 reg;
-	reg = readl(SNVS_BASE_ADDR + SNVS_LPGPR);
+	reg = readl(SRC_BASE_ADDR + SRC_GPR10);
 
 	flag_set = !!(reg & ANDROID_RECOVERY_BOOT);
 
 	/* clean it in case looping infinite here.... */
 	if (flag_set) {
 		reg &= ~ANDROID_RECOVERY_BOOT;
-		writel(reg, SNVS_BASE_ADDR + SNVS_LPGPR);
+		writel(reg, SRC_BASE_ADDR + SRC_GPR10);
 	}
 
 	return flag_set;
@@ -1228,15 +1193,14 @@ int fastboot_check_and_clean_flag(void)
 {
 	int flag_set = 0;
 	u32 reg;
-
-	reg = readl(SNVS_BASE_ADDR + SNVS_LPGPR);
+	reg = readl(SRC_BASE_ADDR + SRC_GPR10);
 
 	flag_set = !!(reg & ANDROID_FASTBOOT_BOOT);
 
 	/* clean it in case looping infinite here.... */
 	if (flag_set) {
 		reg &= ~ANDROID_FASTBOOT_BOOT;
-		writel(reg, SNVS_BASE_ADDR + SNVS_LPGPR);
+		writel(reg, SRC_BASE_ADDR + SRC_GPR10);
 	}
 
 	return flag_set;
@@ -1300,50 +1264,13 @@ U_BOOT_CMD(
 
 #ifdef CONFIG_SECURE_BOOT
 /* -------- start of HAB API updates ------------*/
-#define hab_rvt_report_event_p						\
-(									\
-	(mx6_chip_is_dq() && (mx6_chip_rev() >= CHIP_REV_1_5)) ?	\
-	((hab_rvt_report_event_t *)HAB_RVT_REPORT_EVENT_NEW) :		\
-	(mx6_chip_is_dl() && (mx6_chip_rev() >= CHIP_REV_1_2)) ?	\
-	((hab_rvt_report_event_t *)HAB_RVT_REPORT_EVENT_NEW) :		\
-	((hab_rvt_report_event_t *)HAB_RVT_REPORT_EVENT)		\
-)
-
-#define hab_rvt_report_status_p						\
-(									\
-	(mx6_chip_is_dq() && (mx6_chip_rev() >= CHIP_REV_1_5)) ?	\
-	((hab_rvt_report_status_t *)HAB_RVT_REPORT_STATUS_NEW) :	\
-	(mx6_chip_is_dl() && (mx6_chip_rev() >= CHIP_REV_1_2)) ?	\
-	((hab_rvt_report_status_t *)HAB_RVT_REPORT_STATUS_NEW) :	\
-	((hab_rvt_report_status_t *)HAB_RVT_REPORT_STATUS)		\
-)
-
-#define hab_rvt_authenticate_image_p					\
-(									\
-	(mx6_chip_is_dq() && (mx6_chip_rev() >= CHIP_REV_1_5)) ?	\
-	((hab_rvt_authenticate_image_t *)HAB_RVT_AUTHENTICATE_IMAGE_NEW) :\
-	(mx6_chip_is_dl() && (mx6_chip_rev() >= CHIP_REV_1_2)) ?	\
-	((hab_rvt_authenticate_image_t *)HAB_RVT_AUTHENTICATE_IMAGE_NEW) :\
-	((hab_rvt_authenticate_image_t *)HAB_RVT_AUTHENTICATE_IMAGE)	\
-)
-
-#define hab_rvt_entry_p							\
-(									\
-	(mx6_chip_is_dq() && (mx6_chip_rev() >= CHIP_REV_1_5)) ?	\
-	((hab_rvt_entry_t *)HAB_RVT_ENTRY_NEW) :			\
-	(mx6_chip_is_dl() && (mx6_chip_rev() >= CHIP_REV_1_2)) ?	\
-	((hab_rvt_entry_t *)HAB_RVT_ENTRY_NEW) :			\
-	((hab_rvt_entry_t *)HAB_RVT_ENTRY)				\
-)
-
-#define hab_rvt_exit_p							\
-(									\
-	(mx6_chip_is_dq() && (mx6_chip_rev() >= CHIP_REV_1_5)) ?	\
-	((hab_rvt_exit_t *)HAB_RVT_EXIT_NEW) :				\
-	(mx6_chip_is_dl() && (mx6_chip_rev() >= CHIP_REV_1_2)) ?	\
-	((hab_rvt_exit_t *)HAB_RVT_EXIT_NEW) :				\
-	((hab_rvt_exit_t *)HAB_RVT_EXIT)				\
-)
+#define hab_rvt_report_event ((hab_rvt_report_event_t *)HAB_RVT_REPORT_EVENT)
+#define hab_rvt_report_status ((hab_rvt_report_status_t *)HAB_RVT_REPORT_STATUS)
+#define hab_rvt_authenticate_image \
+	((hab_rvt_authenticate_image_t *)HAB_RVT_AUTHENTICATE_IMAGE)
+#define hab_rvt_entry ((hab_rvt_entry_t *) HAB_RVT_ENTRY)
+#define hab_rvt_exit ((hab_rvt_exit_t *) HAB_RVT_EXIT)
+#define hab_rvt_clock_init HAB_RVT_CLOCK_INIT
 
 #define OCOTP_CFG5_OFFSET	0x460
 #define IVT_SIZE		0x20
@@ -1415,11 +1342,6 @@ int get_hab_status(void)
 	size_t bytes = sizeof(event_data); /* Event size in bytes */
 	hab_config_t config = 0;
 	hab_state_t state = 0;
-	hab_rvt_report_event_t *hab_rvt_report_event;
-	hab_rvt_report_status_t *hab_rvt_report_status;
-
-	hab_rvt_report_event = hab_rvt_report_event_p;
-	hab_rvt_report_status = hab_rvt_report_status_p;
 
 	/* Check HAB status */
 	if (hab_rvt_report_status(&config, &state) != HAB_SUCCESS) {
@@ -1467,29 +1389,6 @@ void hab_caam_clock_disable(void)
 	writel(reg, CCM_BASE_ADDR + CLKCTL_CCGR0);
 }
 
-#ifdef DEBUG_AUTHENTICATE_IMAGE
-void dump_mem(uint32_t addr, int size)
-{
-	int i;
-
-	for (i = 0; i < size; i += 4) {
-		if (i != 0) {
-			if (i % 16 == 0)
-				printf("\n");
-			else
-				printf(" ");
-		}
-
-		printf("0x%08x", *(uint32_t *)addr);
-		addr += 4;
-	}
-
-	printf("\n");
-
-	return;
-}
-#endif
-
 uint32_t authenticate_image(uint32_t ddr_start, uint32_t image_size)
 {
 	uint32_t load_addr = 0;
@@ -1497,63 +1396,38 @@ uint32_t authenticate_image(uint32_t ddr_start, uint32_t image_size)
 	ptrdiff_t ivt_offset = 0;
 	int result = 0;
 	ulong start;
-	hab_rvt_authenticate_image_t *hab_rvt_authenticate_image;
-	hab_rvt_entry_t *hab_rvt_entry;
-	hab_rvt_exit_t *hab_rvt_exit;
 
-	hab_rvt_authenticate_image = hab_rvt_authenticate_image_p;
-	hab_rvt_entry = hab_rvt_entry_p;
-	hab_rvt_exit = hab_rvt_exit_p;
+	if (check_hab_enable() == 1) {
+		printf("\nAuthenticate uImage from DDR location 0x%lx...\n",
+			ddr_start);
 
-	printf("\nAuthenticate uImage from DDR location 0x%lx...\n", ddr_start);
+		hab_caam_clock_enable();
 
-	hab_caam_clock_enable();
+		if (hab_rvt_entry() == HAB_SUCCESS) {
+			/*Align to ALIGN_SIZE*/
+			ivt_offset = image_size - image_size % ALIGN_SIZE
+				+ ALIGN_SIZE;
 
-	if (hab_rvt_entry() == HAB_SUCCESS) {
+			start = ddr_start;
+			bytes = ivt_offset + IVT_SIZE + CSF_PAD_SIZE;
 
-		/* If not already aligned, Align to ALIGN_SIZE */
-		if (image_size % ALIGN_SIZE)
-			ivt_offset = image_size - image_size %
-					ALIGN_SIZE + ALIGN_SIZE;
-		else
-			ivt_offset = image_size;
-
-		start = ddr_start;
-		bytes = ivt_offset + IVT_SIZE + CSF_PAD_SIZE;
-
-#ifdef DEBUG_AUTHENTICATE_IMAGE
-		printf("\nivt_offset = 0x%x, ivt addr = 0x%x\n",
-		       ivt_offset, ddr_start + ivt_offset);
-		printf("Dumping IVT\n");
-		dump_mem(ddr_start + ivt_offset, 0x20);
-
-		printf("Dumping CSF Header\n");
-		dump_mem(ddr_start + ivt_offset + 0x20, 0x40);
-
-		get_hab_status();
-
-		printf("\nCalling authenticate_image in ROM\n");
-		printf("\tivt_offset = 0x%x\n\tstart = 0x%08x"
-		       "\n\tbytes = 0x%x\n", ivt_offset, start, bytes);
-#endif
-
-		load_addr = (uint32_t)hab_rvt_authenticate_image(
+			load_addr = (uint32_t)hab_rvt_authenticate_image(
 					HAB_CID_UBOOT,
 					ivt_offset, (void **)&start,
 					(size_t *)&bytes, NULL);
-		if (hab_rvt_exit() != HAB_SUCCESS) {
-			printf("hab exit function fail\n");
-			load_addr = 0;
-		}
-	} else
-		printf("hab entry function fail\n");
+			if (hab_rvt_exit() != HAB_SUCCESS) {
+				printf("hab exit function fail\n");
+				load_addr = 0;
+			}
+		} else
+			printf("hab entry function fail\n");
 
-	hab_caam_clock_disable();
+		hab_caam_clock_disable();
 
-	get_hab_status();
+		get_hab_status();
+	}
 
-
-	if (load_addr != 0)
+	if ((!check_hab_enable()) || (load_addr != 0))
 		result = 1;
 
 	return result;
@@ -1563,9 +1437,6 @@ uint32_t authenticate_image(uint32_t ddr_start, uint32_t image_size)
 
 
 #ifdef CONFIG_ANDROID_RECOVERY
-#ifndef CONFIG_ANDROID_RECOVERY_BOOTCMD_SD
-#define CONFIG_ANDROID_RECOVERY_BOOTCMD_SD CONFIG_ANDROID_RECOVERY_BOOTCMD_MMC
-#endif
 struct reco_envs supported_reco_envs[BOOT_DEV_NUM] = {
 	{
 		.cmd = CONFIG_ANDROID_RECOVERY_BOOTCMD_MMC,
@@ -1592,24 +1463,17 @@ struct reco_envs supported_reco_envs[BOOT_DEV_NUM] = {
 		.args = CONFIG_ANDROID_RECOVERY_BOOTARGS_MMC,
 	},
 	{
-		.cmd = CONFIG_ANDROID_RECOVERY_BOOTCMD_SD,
+		.cmd = CONFIG_ANDROID_RECOVERY_BOOTCMD_MMC,
 		.args = CONFIG_ANDROID_RECOVERY_BOOTARGS_MMC,
 	},
 	{
 		.cmd = CONFIG_ANDROID_RECOVERY_BOOTCMD_MMC,
 		.args = CONFIG_ANDROID_RECOVERY_BOOTARGS_MMC,
 	},
-#ifdef CONFIG_CMD_NAND
-	{
-		.cmd = CONFIG_ANDROID_RECOVERY_BOOTCMD_NAND,
-		.args = CONFIG_ANDROID_RECOVERY_BOOTARGS_NAND,
-	},
-#else
 	{
 		.cmd = NULL,
 		.args = NULL,
 	},
-#endif
 };
 #endif
 
@@ -1620,17 +1484,3 @@ void get_board_serial(struct tag_serialnr *serialnr)
 	imx_otp_read_one_u32(CPU_UID_HIGH_FUSE_INDEX, &serialnr->high);
 }
 #endif
-
-#ifdef CONFIG_DYNAMIC_MMC_DEVNO
-#if 0
-int get_mmc_env_devno(void)
-{
-	uint soc_sbmr = readl(SRC_BASE_ADDR + 0x4);
-
-	/* BOOT_CFG2[3] and BOOT_CFG2[4] */
-	return (soc_sbmr & 0x00001800) >> 11;
-}
-#endif
-#endif
-
-

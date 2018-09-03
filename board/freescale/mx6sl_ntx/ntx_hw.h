@@ -1,10 +1,7 @@
 #ifndef _NTX_HW_//[
 #define _NTX_HW_
 
-#define NTX_GPIO_KEYS		8
 extern NTX_GPIO * ntx_gpio_keysA[] ;
-extern NTX_GPIO *gptNtxGpioKey_Home,*gptNtxGpioKey_FL,*gptNtxGpioKey_Power;
-extern NTX_GPIO *gptNtxGpioKey_Menu,*gptNtxGpioKey_Return,*gptNtxGpioSW_HallSensor;
 extern int gi_ntx_gpio_keys;
 
 
@@ -21,7 +18,6 @@ int _sd_cd_status (void);
 int ntx_gpio_key_is_fastboot_down(void);
 int ntx_gpio_key_is_home_down(void);
 int ntx_gpio_key_is_fl_down(void);
-int ntx_gpio_key_is_menu_down(void);
 int init_pwr_i2c_function(int iSetAsFunc);
 
 void EPDPMIC_power_on(int iIsPowerON);
@@ -34,7 +30,6 @@ void ntx_hw_early_init(void);
 int RC5T619_read_reg(unsigned char bRegAddr,unsigned char *O_pbRegVal);
 int RC5T619_write_reg(unsigned char bRegAddr,unsigned char bRegWrVal);
 int RC5T619_write_buffer(unsigned char bRegAddr,unsigned char *I_pbRegWrBuf,unsigned short I_wRegWrBufBytes);
-int RC5T619_disable_NOE(void);
 
 int msp430_I2C_Chn_set(unsigned int uiI2C_Chn);
 int msp430_read_buf(unsigned char bRegAddr,unsigned char *O_pbBuf,int I_iBufSize);

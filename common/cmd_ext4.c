@@ -94,7 +94,7 @@ static int do_ext4_load(cmd_tbl_t *cmdtp, int flag, int argc,
 	unsigned long count;
 	char *addr_str;
 	int iChk;
-	//struct ext_filesystem *fs;
+	struct ext_filesystem *fs;
 
 	switch (argc) {
 	case 3:
@@ -176,6 +176,7 @@ static int do_ext4_load(cmd_tbl_t *cmdtp, int flag, int argc,
 
 	if ((part_length = ext4fs_set_blk_dev(ext4_dev_desc, part)) == 0) {
 		printf ("** Bad partition - %s %d:%d **\n",  argv[1], dev, part);
+		ext4fs_close();
 		return 1;
 	}
 
@@ -184,6 +185,7 @@ static int do_ext4_load(cmd_tbl_t *cmdtp, int flag, int argc,
 		return 1;
 	}
 
+	fs = get_fs();
 
 	iChk = 0;
 	do {
@@ -210,7 +212,7 @@ static int do_ext4_load(cmd_tbl_t *cmdtp, int flag, int argc,
 	}while(0);
 
 	ext4fs_close();
-	deinit_fs(ext4_dev_desc);
+	deinit_fs(fs->dev_desc);
 
 
 	if(iChk<0) {
@@ -233,7 +235,7 @@ static int do_ext4_ls(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 	int dev;
 	unsigned long part = 1;
 	char *ep;
-	//struct ext_filesystem *fs;
+	struct ext_filesystem *fs;
 	int part_length;
 
 	if (argc < 3)
@@ -241,15 +243,6 @@ static int do_ext4_ls(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 		return 2;
 
 	dev = (int)simple_strtoul(argv[2], &ep, 16);
-
-	if (*ep) {
-		if (*ep != ':') {
-			puts ("** Invalid boot device, use `dev[:part]' **\n");
-			return 1;
-		}
-		part = (int)simple_strtoul(++ep, NULL, 16);
-	}
-
 	ext4_dev_desc = get_dev(argv[1], dev);
 
 	if (ext4_dev_desc == NULL) {
@@ -257,36 +250,42 @@ static int do_ext4_ls(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 		return 1;
 	}
 
-	part_length = ext4fs_set_blk_dev(ext4_dev_desc, part);
+	if (init_fs(ext4_dev_desc))
+		return 1;
+
+	fs = get_fs();
+	if (*ep) {
+		if (*ep != ':') {
+			puts("\n** Invalid boot device, use `dev[:part]' **\n");
+			return 1;
+		}
+		part = simple_strtoul(++ep, NULL, 16);
+	}
+
+	if (argc == 4)
+		filename = argv[3];
+
+	part_length = ext4fs_set_blk_dev(fs->dev_desc, part);
 	if (part_length == 0) {
 		printf("** Bad partition - %s %d:%lu **\n", argv[1], dev, part);
 		ext4fs_close();
 		return 1;
 	}
 
-
-	if (init_fs(ext4_dev_desc))
-		return 1;
-
-
-	if (argc == 4)
-		filename = argv[3];
-
 	if (!ext4fs_mount(part_length)) {
 		printf("** Bad ext4 partition or disk - %s %d:%lu **\n",
 		       argv[1], dev, part);
-		deinit_fs(ext4_dev_desc);
+		ext4fs_close();
 		return 1;
 	}
 	if (ext4fs_ls(filename)) {
 		printf("** Error ext4fs_ls() **\n");
 		ext4fs_close();
-		deinit_fs(ext4_dev_desc);
 		return 1;
 	};
 
 	ext4fs_close();
-	deinit_fs(ext4_dev_desc);
+	deinit_fs(fs->dev_desc);
 
 	return 0;
 }

@@ -9,10 +9,6 @@
 #include <asm/arch/mx6.h>
 #include <asm/arch/mx6sl_pins.h>
 #include <asm/arch/iomux-v3.h>
-#elif defined(_MX6Q_)
-#include <asm/arch/mx6.h>
-#include <asm/arch/mx6_pins.h>
-#include <asm/arch/iomux-v3.h>
 #endif //] _MX50_
 
 
@@ -20,26 +16,13 @@
 extern C {
 #endif //] __cplusplus
 
-extern int giNTX_VFAT_partNO;
-extern int giNTX_RootFS_partNO;
-extern int giNTX_RecoveryFS_partNO;
-extern int giNTX_BootImg_partNO;
-extern int giNTX_RecoveryImg_partNO;
-extern int giNTX_System_partNO;
-extern int giNTX_Data_partNO;
-extern int giNTX_Cache_partNO;
-extern int giNTX_Vendor_partNO;
-extern int giNTX_Misc_partNO;
-extern int giNTX_Emergency_partNO;
-
-
 
 
 #ifndef _NTX_GPIO//[
 #define _NTX_GPIO
 
 typedef struct tagNTX_GPIO {
-#if defined(_MX6SL_)||defined(_MX6Q_) //[
+#ifdef _MX6SL_ //[
 	iomux_v3_cfg_t tIOMUXv3_PAD_CFG;
 #elif defined(_MX50_) //][!
 	iomux_pin_name_t PIN; // pin name .
@@ -65,16 +48,6 @@ int ntx_gpio_set_value(NTX_GPIO *I_pt_gpio,int iOutVal);
 int ntx_gpio_get_value(NTX_GPIO *I_pt_gpio);
 
 int ntx_gpio_key_is_down(NTX_GPIO *I_pt_gpio);
-
-void _load_isd_hwconfig(void);
-
-
-void ntx_config_fastboot_layout(void);
-
-unsigned long long ntx_get_timeout_ustick(unsigned long dwUS);
-int ntx_is_tick_timeout(unsigned long long u64TimeoutTick);
-
-int ntx_wait_powerkey(int iWaitSecs,int iWaitPwrKeyStateChgTimes,int iChkEnterPwrKeyState);
 
 #ifdef __cplusplus //[
 }

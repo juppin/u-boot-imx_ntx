@@ -36,8 +36,8 @@
 #define CONFIG_SKIP_RELOCATE_UBOOT
 
 #define CONFIG_ARCH_CPU_INIT
-#undef CONFIG_ARCH_MMU /* disable MMU first */
-#define CONFIG_L2_OFF  /* disable L2 cache first*/
+#define CONFIG_ARCH_MMU /* disable MMU first */
+#undef CONFIG_L2_OFF  /* disable L2 cache first*/
 
 #define CONFIG_MX6_HCLK_FREQ	24000000
 
@@ -74,15 +74,26 @@
 #define CONFIG_BAUDRATE			115200
 #define CONFIG_SYS_BAUDRATE_TABLE	{9600, 19200, 38400, 57600, 115200}
 
+#define CONFIG_MXC_SDMA
+#define CONFIG_CMD_SDMA
+#define CONFIG_MMC_DMA
+
+#define CONFIG_MEM_MALLOC_INIT_FAST
+
+#define CONFIG_CONSOLE_QUIET 4096
+#define CONFIG_CMD_PUTS	1
+
 /***********************************************************
  * Command definition
  ***********************************************************/
 
 #include <config_cmd_default.h>
 
+#if 0
 #define CONFIG_CMD_PING
 #define CONFIG_CMD_DHCP
 #define CONFIG_CMD_MII
+#endif
 #define CONFIG_CMD_NET
 #define CONFIG_NET_RETRY_COUNT  100
 #define CONFIG_NET_MULTI 1
@@ -90,8 +101,10 @@
 #define CONFIG_BOOTP_GATEWAY
 #define CONFIG_BOOTP_DNS
 
+#if 0
 #define CONFIG_CMD_SPI
 #define CONFIG_CMD_I2C
+#endif
 #define CONFIG_CMD_IMXOTP
 
 /* Enable below configure when supporting nand */
@@ -145,7 +158,7 @@
 #define CONFIG_SYS_CBSIZE		1024	/* Console I/O Buffer Size */
 /* Print Buffer Size */
 #define CONFIG_SYS_PBSIZE (CONFIG_SYS_CBSIZE + sizeof(CONFIG_SYS_PROMPT) + 16)
-#define CONFIG_SYS_MAXARGS	16	/* max number of command args */
+#define CONFIG_SYS_MAXARGS	32	/* max number of command args */
 #define CONFIG_SYS_BARGSIZE CONFIG_SYS_CBSIZE /* Boot Argument Buffer Size */
 
 #define CONFIG_SYS_MEMTEST_START	0x10000000	/* memtest works on */
@@ -159,6 +172,7 @@
 
 #define CONFIG_CMDLINE_EDITING
 
+#if 0
 #define CONFIG_FEC0_IOBASE	ENET_BASE_ADDR
 #define CONFIG_FEC0_PINMUX	-1
 #define CONFIG_FEC0_MIIBASE	-1
@@ -174,6 +188,7 @@
 #define CONFIG_IPADDR			192.168.1.103
 #define CONFIG_SERVERIP			192.168.1.101
 #define CONFIG_NETMASK			255.255.255.0
+#endif
 
 /*
  * OCOTP Configs
@@ -194,6 +209,7 @@
 	#define CONFIG_SYS_I2C_PORT             I2C2_BASE_ADDR
 	#define CONFIG_SYS_I2C_SPEED            100000
 	#define CONFIG_SYS_I2C_SLAVE            0x8
+	#define CONFIG_MX6_INTER_LDO_BYPASS	0
 #endif
 
 /*
@@ -324,7 +340,7 @@
 	#define CONFIG_ENV_IS_NOWHERE	1
 #endif
 
-#define CONFIG_SPLASH_SCREEN
+#undef CONFIG_SPLASH_SCREEN
 #ifdef CONFIG_SPLASH_SCREEN
 	/*
 	 * Framebuffer and LCD

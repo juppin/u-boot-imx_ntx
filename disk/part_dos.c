@@ -61,7 +61,6 @@ static inline int is_extended(int part_type)
 	    part_type == 0x85);
 }
 
-extern int g_ntx_misc_offset;
 static void print_one_part (dos_partition_t *p, int ext_part_sector, int part_num)
 {
 	int lba_start = ext_part_sector + le32_to_int (p->start4);
@@ -70,9 +69,6 @@ static void print_one_part (dos_partition_t *p, int ext_part_sector, int part_nu
 	printf ("%5d\t\t%10d\t%10d\t%2x%s\n",
 		part_num, lba_start, lba_size, p->sys_ind,
 		(is_extended (p->sys_ind) ? " Extd" : ""));
-
-	if (8 == part_num) 
-		g_ntx_misc_offset = lba_start;
 }
 
 static int test_block_type(unsigned char *buffer)

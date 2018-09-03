@@ -180,10 +180,10 @@ int board_eth_init(bd_t *bis)
  * Last element in struct is used to indicate 1.8V support.
  */
 struct fsl_esdhc_cfg usdhc_cfg[4] = {
-	{USDHC1_BASE_ADDR, 1, 1, 1, 0},
-	{USDHC2_BASE_ADDR, 1, 1, 1, 0},
-	{USDHC3_BASE_ADDR, 1, 1, 1, 0},
-	{USDHC4_BASE_ADDR, 1, 1, 1, 0},
+	{USDHC1_BASE_ADDR, 1, 1, 1, 1},
+	{USDHC2_BASE_ADDR, 1, 1, 1, 1},
+	{USDHC3_BASE_ADDR, 1, 1, 1, 1},
+	{USDHC4_BASE_ADDR, 1, 1, 1, 1},
 };
 
 #ifdef CONFIG_DYNAMIC_MMC_DEVNO
@@ -298,10 +298,8 @@ int usdhc_gpio_init(bd_t *bis)
 		// SD2 is ESD .
 		// SD3 is WIFI SDIO .
 		// SD4 is EMMC .
-		if (3==iISD_IDX || 0==iISD_IDX) {
-			// boot from EMMC@SD4 || EMMC@SD1 ...
-			//
-			// SD2 config as mmcblk1 ...
+		if (3==iISD_IDX) {
+			// boot from EMMC ...
 			mxc_iomux_v3_setup_multiple_pads(usdhc2_pads,
 				ARRAY_SIZE(usdhc2_pads));
 			status |= fsl_esdhc_initialize(bis, &usdhc_cfg[1]);
@@ -309,19 +307,9 @@ int usdhc_gpio_init(bd_t *bis)
 		else {
 			// boot from ESD ...
 			printf("HW switch boot from ESD\n");
-
-			if(NTXHWCFG_TST_FLAG(gptNtxHwCfg->m_val.bPCB_Flags2,0)) {
-				// eMMC@SD1 config as mmcblk1 .
-				mxc_iomux_v3_setup_multiple_pads(usdhc1_pads,
-					ARRAY_SIZE(usdhc1_pads));
-				status |= fsl_esdhc_initialize(bis, &usdhc_cfg[0]);
-			}
-			else {
-				// eMMC@SD4 config as mmcblk1 .
-				mxc_iomux_v3_setup_multiple_pads(usdhc4_pads,
-					ARRAY_SIZE(usdhc4_pads));
-				status |= fsl_esdhc_initialize(bis, &usdhc_cfg[3]);
-			}
+			mxc_iomux_v3_setup_multiple_pads(usdhc4_pads,
+				ARRAY_SIZE(usdhc4_pads));
+			status |= fsl_esdhc_initialize(bis, &usdhc_cfg[3]);
 		}
 
 		mxc_iomux_v3_setup_multiple_pads(usdhc3_pads,
@@ -1497,7 +1485,7 @@ int i2c_bus_recovery(void)
 	for (bus = 1; bus <= 3; bus++) {
 		mx6sl_i2c_gpio_sda_direction(bus, 0);
 
-#if 0
+#if 1
 		if (mx6sl_i2c_gpio_check_sda(bus) == 0) {
 			printf("i2c: I2C%d SDA is low, start i2c recovery...\n",
 			       bus);
@@ -1648,9 +1636,8 @@ int check_powerkey_pressed(void)
 {
 	unsigned GPIO_POWER_KEY;
 
-	if(31==gptNtxHwCfg->m_val.bPCB||32==gptNtxHwCfg->m_val.bPCB||NTXHWCFG_TST_FLAG(gptNtxHwCfg->m_val.bPCB_Flags2,0)) 
-	{
-		// E60Q12/E60Q0X|eMMC@SD1 .
+	if(31==gptNtxHwCfg->m_val.bPCB||32==gptNtxHwCfg->m_val.bPCB) {
+		// E60Q12/E60Q0X .
 		mxc_iomux_v3_setup_pad(MX6SL_PAD_FEC_CRS_DV__GPIO_4_25);
 		GPIO_POWER_KEY = IMX_GPIO_NR(4, 25);
 	}
@@ -1682,15 +1669,12 @@ static const NTX_GPIO gt_ntx_gpio_KB_COL0= {
 int board_early_init(void)
 {
 
-	ntx_parse_syspart_type();
-
 	//printf("\n\n%s()\n\n",__FUNCTION__);
 	EPDPMIC_power_on(0);
 
 #ifdef CONFIG_I2C_MXC
 	setup_i2c(CONFIG_SYS_I2C_PORT);
 	i2c_bus_recovery();
-	RC5T619_disable_NOE();
 	setup_pmic_voltages();
 #endif
 
@@ -1717,13 +1701,12 @@ int board_early_init(void)
 
 	ntx_hw_early_init();
 
-#ifndef CONFIG_MFG
 	_load_boot_waveform();
 	gpbLogo = NtxHiddenMem_load_ntxbin(&gtNtxHiddenMem_logo2,&gdwLogoSize);
 	if(!gpbLogo) {
 		NtxHiddenMem_load_ntxbin(&gtNtxHiddenMem_logo,&gdwLogoSize);
 	}
-#endif
+	
 
 #ifdef CONFIG_MXC_EPDC
 	setup_epdc();
@@ -1794,18 +1777,14 @@ int board_late_init(void)
 		setenv("fastboot_dev",cBufA);
 	}
 
-#ifdef CONFIG_MFG //[
-	#if defined(CONFIG_MFG_FASTBOOT) || defined(CONFIG_MFG_ADB) //[
-	setenv("bootcmd","booti ${fastboot_dev}");
-	#endif//]
-#else
-	if(2==gptNtxHwCfg->m_val.bUIStyle) 
-	{
+	if(2==gptNtxHwCfg->m_val.bUIStyle) {
 		setenv("bootcmd","booti ${fastboot_dev}");
 	}
+
 	
+#ifndef CONFIG_MFG
 	run_command("load_ntxbins", 0);//
-#endif //]CONFIG_MFG
+#endif
 
 	ntx_config_fastboot_layout();
 	//printf("%s(%d)\n",__FUNCTION__,__LINE__);
@@ -1889,10 +1868,7 @@ static int get_mmc_no(char *env_str)
 }
 
 int ntx_check_droid_fastboot_keys(void)
-{
-#ifdef CONFIG_MFG_FASTBOOT //[
-	return 1;
-#endif
+{ 
 	if(2!=gptNtxHwCfg->m_val.bUIStyle) {
 		// Not Android platform .
 		// 統一交由 _detect_bootmode 決定。
@@ -1932,121 +1908,12 @@ int ntx_check_recovery_cmd_file(void)
 	int filelen;
 	char *env;
 
-	block_dev_desc_t *dev_desc = NULL;
-	struct mmc *mmc = NULL;
-	int mmc_no;
-	char *fastboot_env = getenv("fastboot_dev");
-
 
 	if(2!=gptNtxHwCfg->m_val.bUIStyle) {
 		// Not Android platform .
-		return (-1);
-	}
-
-
-	printf("Checking for recovery command file...\n");
-	switch (get_boot_device()) {
-	case MMC_BOOT:
-	case SD_BOOT:
-		mmc_no = get_mmc_no(fastboot_env);
-		mmc = find_mmc_device(mmc_no);
-		dev_desc = get_dev("mmc", mmc_no);
-		if (NULL == dev_desc) {
-			printf("** Block device MMC %d not supported\n", mmc_no);
-			return (-2);
-		}
-
-		mmc_init(mmc);
-
-		if (get_partition_info(dev_desc,
-			giNTX_Cache_partNO,
-			&info)) 
-		{
-			printf("** Bad partition %d **\n",
-				giNTX_Cache_partNO);
-			return (-3);
-		}
-
-			
-#ifdef CONFIG_CMD_EXT4//[
-		{
-			ext4_dev_desc = dev_desc;
-			if ((part_length = ext4fs_set_blk_dev(dev_desc, giNTX_Cache_partNO)) == 0) {
-				printf ("** Bad partition - mmc %d:%d **\n",  mmc_no, giNTX_Cache_partNO);
-
-				return (-9);
-			}
-			if (init_fs(dev_desc)) {
-				return (-10);
-			}
-			
-			if (!ext4fs_mount(part_length)) {
-				printf("** mount ext4 partition failed %d:%d **\n",
-		      mmc_no,giNTX_Cache_partNO );
-				deinit_fs(dev_desc);
-				return (-11);
-			}
-
-			filelen = ext4fs_open(CONFIG_ANDROID_RECOVERY_CMD_FILE);
-		
-			ext4fs_close();
-			if(dev_desc) {
-				deinit_fs(dev_desc);dev_desc=0;
-			}
-		}
-#else //][!CONFIG_CMD_EXT4
-		{
-			part_length = ext2fs_set_blk_dev(dev_desc,
-					giNTX_Cache_partNO);
-			if (part_length == 0) {
-				printf("** Bad partition - mmc 0:%d **\n",
-					giNTX_Cache_partNO);
-				ext2fs_close();
-				return (-4);
-			}
-
-			if (!ext2fs_mount(part_length)) {
-				printf("** Bad ext2 partition or "
-					"disk - mmc 0:%d **\n",
-					giNTX_Cache_partNO);
-				ext2fs_close();
-				return (-5);
-			}
-
-			filelen = ext2fs_open(CONFIG_ANDROID_RECOVERY_CMD_FILE);
-
-			ext2fs_close();
-		}
-#endif//]CONFIG_CMD_EXT4
-		break;
-	case NAND_BOOT:
-		return (-6);
-		break;
-	case SPI_NOR_BOOT:
-		return (-7);
-		break;
-	case UNKNOWN_BOOT:
-	default:
-		return (-8);
-		break;
-	}
-
-	//printf("%s(%d)\n",__FUNCTION__,__LINE__);
-	return (filelen > 0) ? 1 : 0;
-
-}
-
-int check_recovery_cmd_file(void)
-{
-	char *env;
-
-#ifndef CONFIG_MFG//[
-	if(2!=gptNtxHwCfg->m_val.bUIStyle) 
-#endif //]CONFIG_MFG
-	{
-		// not Android .
 		return 0;
 	}
+
 
 	/* For test only */
 	/* When detecting android_recovery_switch,
@@ -2056,19 +1923,84 @@ int check_recovery_cmd_file(void)
 		printf("Env recovery detected!\nEnter recovery mode!\n");
 		return 1;
 	}
-	
-	if (ntx_check_recovery_cmd_file()>0) {
-		return 1;
+
+	printf("Checking for recovery command file...\n");
+	switch (get_boot_device()) {
+	case MMC_BOOT:
+	case SD_BOOT:
+		{
+			struct mmc *mmc = NULL;
+			int mmc_no;
+			struct ext_filesystem *fs;
+			char *fastboot_env = getenv("fastboot_dev");
+			mmc_no = get_mmc_no(fastboot_env);
+			mmc = find_mmc_device(mmc_no);	
+			
+			ext4_dev_desc = get_dev("mmc", mmc_no);
+
+			if (NULL == ext4_dev_desc) {
+				printf("** Block device MMC %d not supported\n", mmc_no);
+				return 0;
+			}
+
+			if (init_fs(ext4_dev_desc))
+				return 1;
+			fs = get_fs();
+			
+			/*if (get_partition_info(fs->dev_desc,
+					CONFIG_ANDROID_CACHE_PARTITION_MMC,
+					&info)) {
+				printf("** Bad partition %d **\n",
+					CONFIG_ANDROID_CACHE_PARTITION_MMC);
+				deinit_fs(fs->dev_desc);
+				return 0;
+			}*/
+
+			part_length = ext4fs_set_blk_dev(fs->dev_desc,
+					CONFIG_ANDROID_CACHE_PARTITION_MMC);
+			if (part_length == 0) {
+				printf("** Bad partition - mmc 0:%d **\n",
+					CONFIG_ANDROID_CACHE_PARTITION_MMC);
+				ext4fs_close();
+				deinit_fs(fs->dev_desc);
+				return 0;
+			}
+
+			if (!ext4fs_mount(part_length)) {
+				printf("** Bad ext2 partition or "
+					"disk - mmc 0:%d **\n",
+					CONFIG_ANDROID_CACHE_PARTITION_MMC);
+				ext4fs_close();
+				deinit_fs(fs->dev_desc);
+				return 0;
+			}
+
+			filelen = ext4fs_open(CONFIG_ANDROID_RECOVERY_CMD_FILE);
+
+			ext4fs_close();
+			deinit_fs(fs->dev_desc);
+		}
+		break;
+	case NAND_BOOT:
+		return 0;
+		break;
+	case SPI_NOR_BOOT:
+		return 0;
+		break;
+	case UNKNOWN_BOOT:
+	default:
+		return 0;
+		break;
 	}
-	if (check_and_clean_recovery_flag()) {
-		return 1;
-	}
-	if (ntx_check_and_increase_boot_count()) {
-		return 1;
-	}
-	return 0;
+
+	return (filelen > 0) ? 1 : 0;
+
 }
 
+int check_recovery_cmd_file(void)
+{
+	return (ntx_check_recovery_cmd_file() || check_and_clean_recovery_flag());
+}
 #endif
 
 #ifdef CONFIG_IMX_UDC

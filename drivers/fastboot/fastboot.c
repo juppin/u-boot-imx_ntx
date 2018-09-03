@@ -35,7 +35,6 @@
 #include <mmc.h>
 #include <sata.h>
 
-
 #ifdef _MX6SL_//[
 	#include "../board/freescale/mx6sl_ntx/ntx_hwconfig.h"
 	#include "../board/freescale/mx6sl_ntx/ntx_comm.h"
@@ -124,8 +123,7 @@ static struct usb_string_descriptor *fastboot_string_table[STR_COUNT];
 static u8 wstrLang[4] = {4, USB_DT_STRING, 0x9, 0x4};
 static u8 wstrManufacturer[2 * (sizeof(CONFIG_FASTBOOT_MANUFACTURER_STR))];
 static u8 wstrProduct[2 * (sizeof(CONFIG_FASTBOOT_PRODUCT_NAME_STR))];
-//static u8 wstrSerial[2*(sizeof(CONFIG_FASTBOOT_SERIAL_NUM))];
-static u8 *wstrSerial;
+static u8 wstrSerial[2*(sizeof(CONFIG_FASTBOOT_SERIAL_NUM))];
 static u8 wstrConfiguration[2 * (sizeof(CONFIG_FASTBOOT_CONFIGURATION_STR))];
 static u8 wstrDataInterface[2 * (sizeof(CONFIG_FASTBOOT_INTERFACE_STR))];
 
@@ -358,8 +356,7 @@ static int fastboot_init_mmc_sata_ptable(void)
 		puts("SATA isn't buildin\n");
 		return -1;
 #endif
-	} 
-	else {
+	} else {
 		int mmc_no = 0;
 
 		mmc_no = get_mmc_no(fastboot_env);
@@ -385,6 +382,7 @@ static int fastboot_init_mmc_sata_ptable(void)
 			user_partition = 0;
 		}
 	}
+
 #if 0
 	memset((char *)ptable, 0,
 		    sizeof(fastboot_ptentry) * (PTN_RECOVERY_INDEX + 1));
@@ -416,6 +414,7 @@ static int fastboot_init_mmc_sata_ptable(void)
 	for (i = 0; i <= PTN_RECOVERY_INDEX; i++)
 		fastboot_flash_add_ptn(&ptable[i]);
 
+
 	return 0;
 #endif
 }
@@ -424,7 +423,6 @@ static int fastboot_init_mmc_sata_ptable(void)
 static void fastboot_init_strings(void)
 {
 	struct usb_string_descriptor *string;
-	int iTemp;
 
 	fastboot_string_table[STR_LANG_INDEX] =
 		(struct usb_string_descriptor *)wstrLang;
@@ -441,12 +439,8 @@ static void fastboot_init_strings(void)
 	str2wide(CONFIG_FASTBOOT_PRODUCT_NAME_STR, string->wData);
 	fastboot_string_table[STR_PRODUCT_INDEX] = string;
 
-
-	iTemp = (strlen(CONFIG_FASTBOOT_SERIAL_NUM)+1)*2;
-	wstrSerial = malloc(iTemp);
 	string = (struct usb_string_descriptor *)wstrSerial;
-	//string->bLength = sizeof(wstrSerial);
-	string->bLength = iTemp;
+	string->bLength = sizeof(wstrSerial);
 	string->bDescriptorType = USB_DT_STRING;
 	str2wide(CONFIG_FASTBOOT_SERIAL_NUM, string->wData);
 	fastboot_string_table[STR_SERIAL_INDEX] = string;
@@ -664,13 +658,6 @@ int fastboot_usb_recv(u8 *buf, int count)
 	return len;
 }
 
-static int (*gpfn_fastboot_abort_at_usb_remove_chk_fn)(void) ; // return 1 if user want to abort fastboot loop .
-
-int fastboot_connection_abort_at_usb_remove_chk_setup(int (*fastboot_abort_at_usb_remove_chk_fn)(void))
-{
-	gpfn_fastboot_abort_at_usb_remove_chk_fn = fastboot_abort_at_usb_remove_chk_fn;
-	return 0;
-}
 
 unsigned long gdwFastboot_connection_timeout_us=0;
 unsigned long long gu64_Fastboot_connection_timeout_tick;
@@ -683,13 +670,14 @@ unsigned long fastboot_connection_timeout_us_set(unsigned long dwTimeoutSetUS)
 	if(0==dwTimeoutSetUS) {
 		gdwFastboot_connection_timeout_us = 0;
 		gu64_Fastboot_connection_timeout_tick=0;
-		//printf("%s() reset timeout !!\n",__FUNCTION__);
+		printf("%s() reset timeout !!\n",__FUNCTION__);
 	}
 	else {
 		u64_ticks = mx6_us_to_tick((unsigned long long)dwTimeoutSetUS);
 		gu64_Fastboot_connection_timeout_tick = get_ticks() + u64_ticks;
 		gdwFastboot_connection_timeout_us = dwTimeoutSetUS;
-		//printf("%s() timeout tick =%llu!!\n",__FUNCTION__,gu64_Fastboot_connection_timeout_tick);
+		printf("%s() timeout tick =%llu!!\n",__FUNCTION__,
+				gu64_Fastboot_connection_timeout_tick);
 	}
 
 	return dwFBTimeoutOld;
@@ -718,7 +706,6 @@ int fastboot_connection_check_timeouted(void)
 int fastboot_getvar(const char *rx_buffer, char *tx_buffer)
 {
 	int iRet = 0;
-
 	/* Place board specific variables here */
 	//printf("%s: rx_buffer=\"%s\"",__FUNCTION__,rx_buffer);
 	if (!strcmp(rx_buffer, "version")) {
@@ -790,19 +777,7 @@ int fastboot_getvar(const char *rx_buffer, char *tx_buffer)
 		sprintf(tx_buffer,"[0] PCB=0x%02X",gptNtxHwCfg->m_val.bPCB);
 	}
 	else if(0==memcmp((char*)rx_buffer,"hwcfg.DisplayResolution",23)) {
-		sprintf(tx_buffer,"[31] DisplayResolution=0x%02X",gptNtxHwCfg->m_val.bDisplayResolution);
-	}
-	else if(0==memcmp((char*)rx_buffer,"hwcfg.RAMType",13)) {
-		sprintf(tx_buffer,"[29] RAMType=0x%02X",gptNtxHwCfg->m_val.bRamType);
-	}
-	else if(0==memcmp((char*)rx_buffer,"hwcfg.RamSize",13)) {
-		sprintf(tx_buffer,"[16] RamSize=0x%02X",gptNtxHwCfg->m_val.bRamSize);
-	}
-	else if(0==memcmp((char*)rx_buffer,"hwcfg.FrontLight_LEDrv",22)) {
-		sprintf(tx_buffer,"[38] FrontLight_LEDrv=0x%02X",gptNtxHwCfg->m_val.bFrontLight_LED_Driver);
-	}
-	else if(0==memcmp((char*)rx_buffer,"hwcfg.Wifi",10)) {
-		sprintf(tx_buffer,"[4] Wifi=0x%02X",gptNtxHwCfg->m_val.bWifi);
+		sprintf(tx_buffer,"[0] PCB=0x%02X",gptNtxHwCfg->m_val.bDisplayResolution);
 	}
 #else //][!
 	else if(0==memcmp((char*)rx_buffer,"hwcfg.",6)) {
@@ -1060,9 +1035,6 @@ static void fastboot_data_handler(u32 len, u8 *recvbuf)
 static void fastboot_cmd_handler(u32 len, u8 *recvbuf)
 {
     u32 *databuf = (u32 *)CONFIG_FASTBOOT_TRANSFER_BUF;
-		int temp_len;
-		u8 *cmdbuf;
-		char *response;
 
 
 		if(len>0) {
@@ -1097,7 +1069,7 @@ static void fastboot_cmd_handler(u32 len, u8 *recvbuf)
 	}
     } else if (memcmp(recvbuf, "flash:", 6) == 0) {
 		if (g_fastboot_datalen ==
-			fastboot_write_storage(recvbuf+6, g_fastboot_datalen)) {
+			fastboot_write_mmc(recvbuf+6, g_fastboot_datalen)) {
 			DBG_ALWS("Fastboot write OK, send OKAY...\n");
 			sprintf((char *)g_fastboot_sendbuf, "OKAY");
 			udc_send_data(g_fastboot_inep_index, g_fastboot_sendbuf,
@@ -1118,85 +1090,75 @@ static void fastboot_cmd_handler(u32 len, u8 *recvbuf)
 			udelay(100000); /* 1 sec */
 
 			do_reset(NULL, 0, 0, NULL);
-		}else if (memcmp(recvbuf, "getvar:", 7) == 0) {
-			memset((char *)g_fastboot_sendbuf, 0, MAX_PAKET_LEN);
 
-			temp_len=7;
-			cmdbuf=recvbuf;
-			response=g_fastboot_sendbuf;
-
-
-			if(0==fastboot_getvar(cmdbuf + 7, response + 4)) {
-				strncpy(response, "OKAY",4);
-			}
-			else {
-				strncpy(response, "FAIL",4);
-			}
-
-			udc_send_data(g_fastboot_inep_index, g_fastboot_sendbuf, strlen(g_fastboot_sendbuf), NULL);
-			g_fastboot_datalen = 0;
-			fastboot_status = FASTBOOT_STS_CMD;
-		} else if (memcmp(recvbuf, "boot", 4) == 0) {			
-
-			temp_len=4;
-			cmdbuf=recvbuf;
-			response=g_fastboot_sendbuf;
-
-			if ((g_fastboot_datalen) &&
-			    (CFG_FASTBOOT_MKBOOTIMAGE_PAGE_SIZE <
-				    g_fastboot_datalen)) {
-				char start[32];
-				char *booti_args[4] = {"booti",  NULL, "boot", NULL};
-
-				/*
-				 * Use this later to determine if a command line was passed
-				 * for the kernel.
-				 */
-				/* struct fastboot_boot_img_hdr *fb_hdr = */
-				/* 	(struct fastboot_boot_img_hdr *) interface.transfer_buffer; */
-
-				/* Skip the mkbootimage header */
-				/* image_header_t *hdr = */
-				/* 	(image_header_t *) */
-				/* 	&interface.transfer_buffer[CFG_FASTBOOT_MKBOOTIMAGE_PAGE_SIZE]; */
-
-				booti_args[1] = start;
-				sprintf(start, "0x%x", (unsigned int)CONFIG_FASTBOOT_TRANSFER_BUF);
-
-				/* Execution should jump to kernel so send the response
-				   now and wait a bit.  */
-				sprintf(response, "OKAY");
-				udc_send_data(g_fastboot_inep_index, g_fastboot_sendbuf,4, NULL);
-
-				printf("Booting kernel...\n");
-
-
-				/* Reserve for further use, this can
-				 * be more convient for developer. */
-				/* if (strlen ((char *) &fb_hdr->cmdline[0])) */
-				/* 	set_env("bootargs", (char *) &fb_hdr->cmdline[0]); */
-
-				/* boot the boot.img */
-				do_booti(NULL, 0, 3, booti_args);
-
-
-			}
-			sprintf(response, "FAILinvalid boot image");
-
-
-
-			udc_send_data(g_fastboot_inep_index, g_fastboot_sendbuf, strlen(g_fastboot_sendbuf), NULL);
-			g_fastboot_datalen = 0;
-			fastboot_status = FASTBOOT_STS_CMD;
-	} else if (memcmp(recvbuf, "erase:userdata", 14) == 0) {
-		extern int write_recovery_BCB (char *pBuf);
-		DBG_ALWS("Fastboot erase:userdata ...\n");
-		write_recovery_BCB (0);
-
+	} else if (memcmp(recvbuf, "getvar:", 7) == 0) {
+        memset((char *)g_fastboot_sendbuf, 0, MAX_PAKET_LEN);
 		sprintf((char *)g_fastboot_sendbuf, "OKAY");
-		udc_send_data(g_fastboot_inep_index, g_fastboot_sendbuf, 4, NULL);
+
+		if (!strcmp((char *)recvbuf + 7, "version")) {
+			strcpy((char *)g_fastboot_sendbuf + 4, FASTBOOT_VERSION);
+			
+		} else if (!strcmp((char *)recvbuf + 7, "product")) {
+			strcpy((char *)g_fastboot_sendbuf + 4, CONFIG_FASTBOOT_PRODUCT_NAME_STR);
+
+		} else if (!strcmp((char *)recvbuf + 7, "serialno")) {
+			strcpy((char *)g_fastboot_sendbuf + 4, CONFIG_FASTBOOT_SERIAL_NUM);
+
+		} else if (!strcmp((char *)recvbuf + 7, "downloadsize")) {
+			sprintf((char *)g_fastboot_sendbuf + 4, "0x%x", g_fastboot_datalen);
+		} else {
+			fastboot_getvar(recvbuf + 7, (char *)g_fastboot_sendbuf + 4);
+		}
+		udc_send_data(g_fastboot_inep_index, g_fastboot_sendbuf, strlen(g_fastboot_sendbuf), NULL);
 		g_fastboot_datalen = 0;
 		fastboot_status = FASTBOOT_STS_CMD;
+			
+	} else if (memcmp(recvbuf, "boot", 4) == 0) {
+		if ((g_fastboot_datalen) &&
+		    (CFG_FASTBOOT_MKBOOTIMAGE_PAGE_SIZE <
+			    g_fastboot_datalen)) {
+			char start[32];
+			char *booti_args[4] = {"booti",  NULL, "boot", NULL};
+
+			/*
+			 * Use this later to determine if a command line was passed
+			 * for the kernel.
+			 */
+			/* struct fastboot_boot_img_hdr *fb_hdr = */
+			/* 	(struct fastboot_boot_img_hdr *) interface.transfer_buffer; */
+
+			/* Skip the mkbootimage header */
+			/* image_header_t *hdr = */
+			/* 	(image_header_t *) */
+			/* 	&interface.transfer_buffer[CFG_FASTBOOT_MKBOOTIMAGE_PAGE_SIZE]; */
+
+			booti_args[1] = start;
+			sprintf(start, "0x%x", CONFIG_FASTBOOT_TRANSFER_BUF);
+
+			/* Execution should jump to kernel so send the response
+			   now and wait a bit.  */
+			sprintf((char *)g_fastboot_sendbuf, "OKAY");
+			udc_send_data(g_fastboot_inep_index, g_fastboot_sendbuf,
+								4, NULL);
+
+
+			printf("Booting kernel...\n");
+
+
+			/* Reserve for further use, this can
+			 * be more convient for developer. */
+			/* if (strlen ((char *) &fb_hdr->cmdline[0])) */
+			/* 	set_env("bootargs", (char *) &fb_hdr->cmdline[0]); */
+
+			/* boot the boot.img */
+			do_booti(NULL, 0, 3, booti_args);
+		}
+		sprintf((char *)g_fastboot_sendbuf, "FAILinvalid boot image");
+		udc_send_data(g_fastboot_inep_index, g_fastboot_sendbuf,
+							4, NULL);
+		g_fastboot_datalen = 0;
+		fastboot_status = FASTBOOT_STS_CMD;
+		
     } else {
 		DBG_ERR("Not support command:%s\n", recvbuf);
 		sprintf((char *)g_fastboot_sendbuf, "FAIL");
@@ -1258,17 +1220,8 @@ void fastboot_quick(u8 debug)
 				fastboot_status = FASTBOOT_STS_CMD_WAIT;
 			}
 		}
-
-
-		if (usb_irq < 0) {
+		if (usb_irq < 0)
 			g_usb_connected = 0;
-
-			if(gpfn_fastboot_abort_at_usb_remove_chk_fn && gpfn_fastboot_abort_at_usb_remove_chk_fn()) {
-				printf("fastboot abort : usb removed !\n");
-				ifastboot_break = 1;
-				break;
-			}
-		}
 
 		if(fastboot_connection_check_timeouted()) {
 			printf("fastboot connection timeouted !!!");

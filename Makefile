@@ -3311,7 +3311,6 @@ mx6dl_arm2_iram_config		\
 mx6dl_arm2_mfg_config		\
 mx6dl_arm2_lpddr2_config	\
 mx6q_arm2_config		\
-mx6q_arm2_nand_config		\
 mx6q_arm2_android_config        \
 mx6q_arm2_mfg_config		\
 mx6q_arm2_lpddr2_config		\
@@ -3324,8 +3323,6 @@ mx6q_arm2_iram_config	: unconfig
 	@$(MKCONFIG) $(@:_config=) arm arm_cortexa8 mx6q_arm2 freescale mx6
 
 mx6solo_sabresd_config			\
-mx6solo_sabresd_mfg_config		\
-mx6solo_sabresd_android_config             \
 mx6dl_sabresd_config			\
 mx6dl_sabresd_mfg_config		\
 mx6dl_sabresd_android_config			\
@@ -3339,41 +3336,11 @@ mx6q_sabresd_iram_config	: unconfig
 		}
 	@$(MKCONFIG) $(@:_config=) arm arm_cortexa8 mx6q_sabresd freescale mx6
 
-mx6q_ntx_config			\
-mx6q_ntx_android_config             \
-mx6q_ntx_mfg_config			\
-mx6q_ntx_iram_config	: unconfig
-	@[ -z "$(findstring iram_,$@)" ] || \
-		{ echo "TEXT_BASE = 0x00907000" >$(obj)board/freescale/mx6q_ntx/config.tmp ; \
-		  echo "... with iram configuration" ; \
-		}
-	@$(MKCONFIG) $(@:_config=) arm arm_cortexa8 mx6q_ntx freescale mx6
-
 mx6q_sabrelite_config			\
 mx6q_sabrelite_android_config 		\
 mx6q_sabrelite_mfg_config   : unconfig
 	@$(MKCONFIG) $(@:_config=) arm arm_cortexa8 mx6q_sabrelite freescale mx6
 
-mx6dl_hdmidongle_config			\
-mx6dl_hdmidongle_nand_config			\
-mx6dl_hdmidongle_mfg_config		\
-mx6dl_hdmidongle_nand_mfg_config		\
-mx6dl_hdmidongle_android_config			\
-mx6dl_hdmidongle_nand_android_config			\
-mx6q_hdmidongle_config			\
-mx6q_hdmidongle_nand_config			\
-mx6q_hdmidongle_android_config 		\
-mx6q_hdmidongle_nand_android_config 		\
-mx6q_hdmidongle_mfg_config			\
-mx6q_hdmidongle_nand_mfg_config   : unconfig
-	@$(MKCONFIG) $(@:_config=) arm arm_cortexa8 mx6q_hdmidongle freescale mx6
-
-mx6q_sabreauto_android_config		\
-mx6q_sabreauto_nand_android_config		\
-mx6dl_sabreauto_android_config		\
-mx6dl_sabreauto_nand_android_config		\
-mx6solo_sabreauto_android_config		\
-mx6solo_sabreauto_nand_android_config		\
 mx6q_sabreauto_weimnor_mfg_config	\
 mx6q_sabreauto_weimnor_config		\
 mx6q_sabreauto_nand_mfg_config		\
@@ -3441,13 +3408,9 @@ mx6sl_ntx_lpddr2_256m_iram_config    : unconfig
 		}
 	@$(MKCONFIG) $(@:_config=) arm arm_cortexa8 mx6sl_ntx freescale mx6
 
-
-
 mx6sl_ntx_lpddr2-MT42L128M32D1_config		\
 mx6sl_ntx_lpddr2-MT42L128M32D1_android_config		\
 mx6sl_ntx_lpddr2-MT42L128M32D1_mfg_config	\
-mx6sl_ntx_lpddr2-MT42L128M32D1_mfg_fastboot_config	\
-mx6sl_ntx_lpddr2-MT42L128M32D1_mfg_adb_config	\
 mx6sl_ntx_lpddr2-MT42L128M32D1_iram_config	: unconfig
 	@[ -z "$(findstring iram_,$@)" ] || \
 		{ echo "TEXT_BASE = 0x00907000" >$(obj)board/freescale/mx6sl_ntx/config.tmp ; \
@@ -3458,114 +3421,12 @@ mx6sl_ntx_lpddr2-MT42L128M32D1_iram_config	: unconfig
 mx6sl_ntx_lpddr2-MT42L128M32D1-256MB_config		\
 mx6sl_ntx_lpddr2-MT42L128M32D1-256MB_android_config		\
 mx6sl_ntx_lpddr2-MT42L128M32D1-256MB_mfg_config	\
-mx6sl_ntx_ddr3-NT5CC256M16DP_config		\
-mx6sl_ntx_ddr3-NT5CC256M16DP_mfg_config		\
-mx6sl_ntx_ddr3-NT5CC256M16DP_android_config		\
-mx6sl_ntx_lpddr2-NT6TL256T32_config		\
-mx6sl_ntx_lpddr2-NT6TL256T32_mfg_config		\
 mx6sl_ntx_lpddr2-MT42L128M32D1-256MB_iram_config	: unconfig
 	@[ -z "$(findstring iram_,$@)" ] || \
 		{ echo "TEXT_BASE = 0x00907000" >$(obj)board/freescale/mx6sl_ntx/config.tmp ; \
 		  echo "... with iram configuration" ; \
 		}
 	@$(MKCONFIG) $(@:_config=) arm arm_cortexa8 mx6sl_ntx freescale mx6
-
-NTX_BOARD_CONFIGS_LPDDR2_512MB_E60Q90 = \
-E60Q20-LPDDR2-512_config \
-E60Q30-LPDDR2-512_config \
-E60Q50-LPDDR2-512_config \
-E60Q50C-LPDDR2-512_config \
-E60Q90-LPDDR2-512_config \
-E60QH0-LPDDR2-512_config \
-
-NTX_BOARD_CONFIGS_LPDDR2_256MB_E60Q90 = \
-E60Q20-LPDDR2-256_config \
-E60Q90-LPDDR2-256_config \
-E60QA0-LPDDR2-256_config \
-E60QL0-LPDDR2-256_config \
-
-NTX_BOARD_CONFIGS_LPDDR2_512MB_E60Q60 = \
-E60Q60-LPDDR2-512_config \
-
-
-$(NTX_BOARD_CONFIGS_LPDDR2_512MB_E60Q90): ntxboard_lpddr2_E60Q90_512MB
-
-$(NTX_BOARD_CONFIGS_LPDDR2_256MB_E60Q90): ntxboard_lpddr2_E60Q90_256MB
-
-$(NTX_BOARD_CONFIGS_LPDDR2_512MB_E60Q60): ntxboard_lpddr2_E60Q60_512MB
-
-NTX_BOARD_CONFIGS_LPDDR2_512MB_E60QD0 = \
-E60QD0-LPDDR2-512_config \
-E60Q50C-LPDDR2-512-2_config \
-E60QF0-LPDDR2-512_config \
-E60QG0-LPDDR2-512_config \
-E70Q00-LPDDR2-512_config \
-E70Q20-LPDDR2-512_config \
-E60QJ0-LPDDR2-512_config \
-E60QM0-LPDDR2-512_config \
-C31Q00-LPDDR2-512_config \
-E60QP0-LPDDR2-512_config \
-E60QQ0-LPDDR2-512_config \
-
-$(NTX_BOARD_CONFIGS_LPDDR2_512MB_E60QD0): ntxboard_lpddr2_E60QD0_512MB
-
-NTX_BOARD_CONFIGS_LPDDR2_1024MB_E60QN0 = \
-E60QN0-LPDDR2-1024_config \
-E70Q10-LPDDR2-1024_config \
-
-$(NTX_BOARD_CONFIGS_LPDDR2_1024MB_E60QN0): ntxboard_lpddr2_E60QN0_1024MB
-
-
-NTX_BOARD_CONFIGS_LPDDR2_512MB_ED0Q00 = \
-ED0Q00-LPDDR2-512_config \
-ED0Q10-LPDDR2-512_config \
-
-$(NTX_BOARD_CONFIGS_LPDDR2_512MB_ED0Q00): ntxboard_lpddr2_ED0Q00_512MB
-
-NTX_BOARD_CONFIGS_LPDDR2_512MB_E60Q80 = \
-E60Q80-LPDDR2-512_config \
-
-$(NTX_BOARD_CONFIGS_DDR3_512MB_E60QJ0): ntxboard_lpddr2_E60Q80_512MB
-
-NTX_BOARD_CONFIGS_DDR3_512MB_E60QJ0 = \
-E60QJ0-DDR3-512_config \
-E60QK0-DDR3-512_config \
-
-$(NTX_BOARD_CONFIGS_DDR3_512MB_E60QJ0): ntxboard_ddr3_E60QJ0_512MB
-
-
-PHONY :=
-PHONY += $(NTX_BOARD_CONFIGS_LPDDR2_512MB_E60Q90) $(NTX_BOARD_CONFIGS_LPDDR2_256MB_E60Q90) ${NTX_BOARD_CONFIGS_LPDDR2_512MB_E60Q80} $(NTX_BOARD_CONFIGS_LPDDR2_512MB_E60QD0) $(NTX_BOARD_CONFIGS_LPDDR2_512MB_ED0Q00) $(NTX_BOARD_CONFIGS_DDR3_512MB_E60QJ0) $(NTX_BOARD_CONFIGS_LPDDR2_1024MB_E60QN0)
-
-PHONY += ntxboard_lpddr2_E60Q90_512MB ntxboard_lpddr2_E60Q90_256MB ntxboard_lpddr2_E60Q80_512MB ntxboard_lpddr2_E60QD0_512MB ntxboard_lpddr2_ED0Q00_512MB ntxboard_ddr3_E60QJ0_512MB ntxboard_lpddr2_E60QN0_1024MB ntxboard_lpddr2_E60Q60_512MB
-
-
-ntxboard_lpddr2_E60Q90_512MB: mx6sl_ntx_lpddr2-MT42L128M32D1_android_config
-	@cd board/freescale/mx6sl_ntx &&	rm -f flash_header.S &&	ln -s flash_header.E60Q90.S flash_header.S &&	cd -
-
-ntxboard_lpddr2_E60Q60_512MB: mx6sl_ntx_lpddr2-MT42L128M32D1_android_config
-	@cd board/freescale/mx6sl_ntx &&	rm -f flash_header.S &&	ln -s flash_header.E60Q60.S flash_header.S &&	cd -
-
-ntxboard_lpddr2_E60Q90_256MB: mx6sl_ntx_lpddr2-MT42L128M32D1-256MB_android_config
-	@cd board/freescale/mx6sl_ntx &&	rm -f flash_header.S &&	ln -s flash_header.E60Q90.S flash_header.S &&	cd -
-
-ntxboard_lpddr2_E60Q80_512MB: mx6sl_ntx_lpddr2-MT42L128M32D1_android_config
-	@cd board/freescale/mx6sl_ntx &&	rm -f flash_header.S &&	ln -s 20140731_Netronix_MX6SL_LPDDR2_512MB_000.inc.flash_header.S flash_header.S &&	cd -
-
-ntxboard_lpddr2_E60QD0_512MB: mx6sl_ntx_lpddr2-MT42L128M32D1_android_config
-	@cd board/freescale/mx6sl_ntx &&	rm -f flash_header.S &&	ln -s flash_header.E60QD0.S flash_header.S &&	cd -
-
-ntxboard_lpddr2_E60QN0_1024MB: mx6sl_ntx_lpddr2-NT6TL256T32_config
-	@cd board/freescale/mx6sl_ntx &&	rm -f flash_header.S &&	ln -s flash_header.LPDDR2-NT6TL256T32.S flash_header.S &&	cd -
-
-ntxboard_lpddr2_ED0Q00_512MB: mx6sl_ntx_lpddr2-MT42L128M32D1_android_config
-	@cd board/freescale/mx6sl_ntx &&	rm -f flash_header.S &&	ln -s MX6SL_MMDC_LPDDR2_register_programming_aid_v0.9.inc.flash_header.S flash_header.S &&	cd -
-
-ntxboard_ddr3_E60QJ0_512MB: mx6sl_ntx_ddr3-NT5CC256M16DP_android_config
-	@cd board/freescale/mx6sl_ntx &&	rm -f flash_header.S &&	ln -s flash_header.S_mp flash_header.S &&	cd -
-
-.PHONY : $(PHONY)
-
 
 
 omap2420h4_config	: unconfig

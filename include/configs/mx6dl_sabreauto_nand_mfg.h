@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Freescale Semiconductor, Inc.
+ * Copyright (C) 2012 Freescale Semiconductor, Inc.
  *
  * Configuration settings for the MX6Solo SABRE-AI Freescale board.
  *
@@ -116,7 +116,7 @@
 #define CONFIG_LOADADDR		0x10800000	/* loadaddr env var */
 #define CONFIG_RD_LOADADDR	(CONFIG_LOADADDR + 0x300000)
 
-#define CONFIG_BOOTARGS         "console=ttymxc3,115200 rdinit=/linuxrc mtdparts=gpmi-nand:16m(boot),16m(kernel),128m(rootfs),-(user)"\
+#define CONFIG_BOOTARGS         "console=ttymxc3,115200 rdinit=/linuxrc mtdparts=gpmi-nand:16m(boot),16m(kernel),128m(rootfs)"\
 				"arm_freq=800"
 #define CONFIG_BOOTCOMMAND      "bootm 0x10800000 0x10c00000"
 
@@ -132,7 +132,7 @@
  * Miscellaneous configurable options
  */
 #define CONFIG_SYS_LONGHELP		/* undef to save memory */
-#define CONFIG_SYS_PROMPT		"MX6DL SABREAUTO MFG U-Boot > "
+#define CONFIG_SYS_PROMPT		"MX6SOLO SABREAUTO MFG U-Boot > "
 #define CONFIG_AUTO_COMPLETE
 #define CONFIG_SYS_CBSIZE		256	/* Console I/O Buffer Size */
 /* Print Buffer Size */

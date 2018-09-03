@@ -64,10 +64,6 @@
 /* Android mkbootimg format*/
 #include <bootimg.h>
 
-
-#include "../board/freescale/mx6sl_ntx/ntx_comm.h"
-
-
 DECLARE_GLOBAL_DATA_PTR;
 
 extern int gunzip (void *dst, int dstlen, unsigned char *src, unsigned long *lenp);
@@ -570,7 +566,7 @@ int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 {
 	ulong		iflag;
 	ulong		load_end = 0;
-	int		ret=1;
+	int		ret;
 	boot_os_fn	*boot_fn;
 
 
@@ -616,10 +612,7 @@ int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 		 * Right now we assume the first arg should never be '-'
 		 */
 		if ((*endp != 0) && (*endp != ':') && (*endp != '#'))
-			if(do_bootm_subcommand(cmdtp, flag, argc, argv)) 
-			{
-				ret = 1;goto end;
-			}
+			return do_bootm_subcommand(cmdtp, flag, argc, argv);
 	}
 
 #ifdef CONFIG_SECURE_BOOT
@@ -628,7 +621,7 @@ int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	if (authenticate_image(load_addr,
 			image_get_image_size((image_header_t *)load_addr)) == 0) {
 		printf("Authenticate UImage Fail, Please check\n");
-		ret = 1;goto end;
+		return 1;
 	}
 
 #endif
@@ -652,9 +645,7 @@ int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	// ] gallen add 20120720
 
 	if (bootm_start(cmdtp, flag, argc, argv))
-	{
-		ret = 1;goto end;
-	}
+		return 1;
 
 	/*
 	 * We have reached the point of no return: we are going to
@@ -706,7 +697,7 @@ int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 			if (iflag)
 				enable_interrupts();
 			show_boot_progress (-7);
-			ret = 1;goto end;
+			return 1;
 		}
 	}
 
@@ -717,7 +708,7 @@ int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 			enable_interrupts();
 		/* This may return when 'autostart' is 'no' */
 		bootm_start_standalone(iflag, argc, argv);
-		ret = 0;goto end;
+		return 0;
 	}
 
 	show_boot_progress (8);
@@ -735,7 +726,7 @@ int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 		printf ("ERROR: booting os '%s' (%d) is not supported\n",
 			genimg_get_os_name(images.os.os), images.os.os);
 		show_boot_progress (-8);
-		ret = 1;goto end;
+		return 1;
 	}
 
 	boot_fn(0, argc, argv, &images);
@@ -746,13 +737,7 @@ int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 #endif
 	do_reset (cmdtp, flag, argc, argv);
 
-end:
-	//printf("%s() end,ret=%d\n",__FUNCTION__,ret);
-#ifdef CONFIG_FASTBOOT
-	return run_command("fastboot q0",0);
-#else
-	return ret;
-#endif
+	return 1;
 }
 
 /**
@@ -1620,29 +1605,19 @@ int do_booti(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 			goto fail;
 		}
 
+#ifdef CONFIG_ANDROID_BOOT_PARTITION_MMC
+#ifdef CONFIG_ANDROID_RECOVERY_PARTITION_MMC
 		if (!strcmp(ptn, "boot"))
-		{
-#ifdef CONFIG_ANDROID_BOOT_PARTITION_MMC//[
 			partno = CONFIG_ANDROID_BOOT_PARTITION_MMC;
-#else //][!	CONFIG_ANDROID_BOOT_PARTITION_MMC		
-			partno = giNTX_BootImg_partNO;
-#endif//]CONFIG_ANDROID_BOOT_PARTITION_MMC
-		}
-
 		if (!strcmp(ptn, "recovery"))
-		{
-#ifdef CONFIG_ANDROID_RECOVERY_PARTITION_MMC//[
 			partno = CONFIG_ANDROID_RECOVERY_PARTITION_MMC;
-#else //][!CONFIG_ANDROID_RECOVERY_PARTITION_MMC
-			partno = giNTX_RecoveryImg_partNO;
-#endif//]CONFIG_ANDROID_RECOVERY_PARTITION_MMC
-		}
-
 
 		if (get_partition_info(dev_desc, partno, &info)) {
 			printf("booti: device don't have such partition:%s\n", ptn);
 			goto fail;
 		}
+#endif
+#endif
 
 #ifdef CONFIG_FASTBOOT
 		fastboot_ptentry the_partition = {
@@ -1652,15 +1627,8 @@ int do_booti(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 			.partition_id = 0,
 		};
 		strncpy(the_partition.name, ptn, 10);
+		fastboot_flash_add_ptn(&the_partition);
 		/* fastboot_flash_dump_ptn(); */
-
-		pte = fastboot_flash_find_ptn(ptn);
-		if (!pte) {
-
-			fastboot_flash_add_ptn(&the_partition);
-			printf("booti: cannot find '%s' partition,Adding it from partno=%d,start=%d,leng=%d\n",
-					ptn,partno,the_partition.start,the_partition.length);
-		}
 
 		pte = fastboot_flash_find_ptn(ptn);
 		if (!pte) {
@@ -1743,21 +1711,6 @@ int do_booti(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	printf("kernel   @ %08x (%d)\n", hdr->kernel_addr, hdr->kernel_size);
 	printf("ramdisk  @ %08x (%d)\n", hdr->ramdisk_addr, hdr->ramdisk_size);
 
-#ifdef CONFIG_SECURE_BOOT
-#define IVT_SIZE 0x20
-#define CSF_PAD_SIZE 0x2000
-	extern uint32_t authenticate_image(uint32_t ddr_start,
-					   uint32_t image_size);
-
-	image_size = hdr->ramdisk_addr + hdr->ramdisk_size - hdr->kernel_addr -
-		IVT_SIZE - CSF_PAD_SIZE;
-
-	if (authenticate_image(hdr->kernel_addr, image_size))
-		printf("Authentication Successful\n");
-	else
-		printf("Authentication Failed\n");
-#endif
-
 	do_booti_linux(hdr);
 
 	puts ("booti: Control returned to monitor - resetting...\n");
@@ -1766,7 +1719,7 @@ int do_booti(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 
 fail:
 #ifdef CONFIG_FASTBOOT
-	return run_command("fastboot q0",0);
+	return do_fastboot(NULL, 0, 0, NULL);
 #else
 	return -1;
 #endif
